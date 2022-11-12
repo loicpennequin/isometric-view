@@ -10,7 +10,10 @@ import {
   floorVector,
   subVector,
   mulVector,
-  pointRectCollision
+  pointRectCollision,
+  vectorEquals,
+  circle,
+  clampVector
 } from './utils';
 import { map } from './map';
 import { tiles } from './tiles';
@@ -85,10 +88,55 @@ canvas.addEventListener(
   },
   false
 );
+
 const sceneOrigin = {
   x: window.innerWidth / 2,
   y: 250
 };
+
+let player = {
+  x: 0,
+  y: 0
+};
+
+let controls = {
+  x: 0,
+  y: 0
+};
+
+const handleKeyboard = (e: KeyboardEvent) => {
+  switch (e.code) {
+    case 'ArrowUp':
+      controls.x--;
+      controls.y--;
+      break;
+    case 'ArrowDown':
+      controls.x++;
+      controls.y++;
+      break;
+    case 'ArrowLeft':
+      controls.x--;
+      controls.y++;
+      break;
+    case 'ArrowRight':
+      controls.y--;
+      controls.x++;
+      break;
+  }
+
+  controls = clampVector(controls, {
+    min: { x: -1, y: -1 },
+    max: { x: 1, y: 1 }
+  });
+};
+document.addEventListener('keydown', handleKeyboard);
+document.addEventListener('keyup', e => {
+  console.log('========');
+  console.log(player);
+  player = addVector(player, controls);
+  console.log(player);
+  controls = { x: 0, y: 0 };
+});
 
 function draw() {
   if (!ctx) return;
@@ -120,36 +168,49 @@ function draw() {
         CELL_SIZE * 2
       );
     });
+
+    if (vectorEquals({ x, y }, player)) {
+      circle(ctx, {
+        x: iso.x + CELL_SIZE,
+        y: iso.y - (cell.length - 1) * CELL_SIZE,
+        r: 32
+      });
+      ctx.fillStyle = 'red';
+      ctx.fill();
+    }
     ctx.restore();
   });
 
-  // matrixForEach(map, (_, { x, y }) => {
-  //   const iso = cartesianToIsometric({
-  //     x: x * CELL_SIZE,
-  //     y: y * CELL_SIZE
-  //   });
+  if (import.meta.env.VITE_DEBUG) {
+    matrixForEach(map, (_, { x, y }) => {
+      const iso = cartesianToIsometric({
+        x: x * CELL_SIZE,
+        y: y * CELL_SIZE
+      });
 
-  //   ctx.strokeStyle = 'red';
-  //   ctx.fillStyle = 'rgba(255,0,0,0.2)';
-  //   ctx.textBaseline = 'top';
-  //   ctx.strokeRect(iso.x, iso.y, CELL_SIZE, CELL_SIZE);
-  //   if (x === selectedCell.x && y === selectedCell.y) {
-  //     ctx.fillRect(iso.x, iso.y, CELL_SIZE, CELL_SIZE);
-  //   }
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = 2;
+      ctx.fillStyle = 'rgba(0,0,255,0.2)';
+      ctx.textBaseline = 'top';
+      ctx.strokeRect(iso.x, iso.y, CELL_SIZE, CELL_SIZE);
+      if (x === selectedCell.x && y === selectedCell.y) {
+        ctx.fillRect(iso.x, iso.y, CELL_SIZE, CELL_SIZE);
+      }
 
-  //   ctx.fillStyle = 'rgba(0,0,0,0.6)';
-  //   ctx.beginPath();
-  //   ctx.fillRect(iso.x, iso.y, CELL_SIZE, 30);
-  //   ctx.closePath();
-  //   ctx.fillStyle = 'white';
-  //   ctx.font = '14px Helvetica';
-  //   ctx.fillText(
-  //     `${Math.round(iso.x * scale)} : ${Math.round(iso.y * scale)}`,
-  //     iso.x,
-  //     iso.y
-  //   );
-  //   ctx.fillText(`${x} : ${y}`, iso.x, iso.y + 15);
-  // });
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.beginPath();
+      ctx.fillRect(iso.x, iso.y, CELL_SIZE, 30);
+      ctx.closePath();
+      ctx.fillStyle = 'white';
+      ctx.font = '14px Helvetica';
+      ctx.fillText(
+        `${Math.round(iso.x * scale)} : ${Math.round(iso.y * scale)}`,
+        iso.x,
+        iso.y
+      );
+      ctx.fillText(`${x} : ${y}`, iso.x, iso.y + 15);
+    });
+  }
 
   ctx.restore();
   return requestAnimationFrame(draw);

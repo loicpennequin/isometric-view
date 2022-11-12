@@ -1,4 +1,12 @@
-import { Circle, Dimensions, Matrix, Point, Range, Rectangle } from './types';
+import {
+  Boundaries,
+  Circle,
+  Dimensions,
+  Matrix,
+  Point,
+  Range,
+  Rectangle
+} from './types';
 
 export const cartesianToIsometric = (point: Point) => ({
   x: point.x - point.y,
@@ -74,6 +82,17 @@ export const floorVector = (vec: Point) => ({
   x: Math.floor(vec.x),
   y: Math.floor(vec.y)
 });
+
+export const clampVector = (
+  { x, y }: Point,
+  { min, max }: Boundaries<Point>
+): Point => ({
+  x: clamp(x, { min: min.x, max: max.x }),
+  y: clamp(y, { min: min.y, max: max.y })
+});
+
+export const vectorEquals = (vec1: Point, vec2: Point) =>
+  vec1.x === vec2.x && vec1.y === vec2.y;
 
 export const circle = (ctx: CanvasRenderingContext2D, { x, y, r }: Circle) => {
   ctx.beginPath();

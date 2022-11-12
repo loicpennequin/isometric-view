@@ -3,48 +3,48 @@ import { tiles } from './tiles';
 
 export const map = [
   [
-    [tiles.dirt, tiles.dirt, tiles.grass],
-    [tiles.dirt, tiles.dirt, tiles.grass],
-    [tiles.dirt, tiles.grass],
-    [tiles.dirt, tiles.grass],
-    [tiles.dirt, tiles.grass],
-    [tiles.dirt, tiles.grass],
-    [tiles.dirt, tiles.grass]
+    [tiles.base, tiles.base, tiles.base],
+    [tiles.base, tiles.base, tiles.base],
+    [tiles.base, tiles.base],
+    [tiles.base, tiles.base],
+    [tiles.base, tiles.base],
+    [tiles.base, tiles.base],
+    [tiles.base, tiles.base]
   ],
   [
-    [tiles.dirt, tiles.dirt, tiles.grass],
-    [tiles.dirt, tiles.grass],
-    [tiles.dirt, tiles.grass],
-    [tiles.grass],
-    [tiles.grass],
-    [tiles.grass],
-    [tiles.dirt, tiles.grass]
+    [tiles.base, tiles.base, tiles.base],
+    [tiles.base, tiles.base],
+    [tiles.base, tiles.base],
+    [tiles.base],
+    [tiles.base],
+    [tiles.base],
+    [tiles.base, tiles.base]
   ],
   [
-    [tiles.dirt, tiles.grass],
-    [tiles.dirt, tiles.grass],
-    [tiles.dirt, tiles.grass],
-    [tiles.grass],
-    [tiles.grass],
-    [tiles.grass],
-    [tiles.dirt, tiles.grass]
+    [tiles.base, tiles.base],
+    [tiles.base, tiles.base],
+    [tiles.base, tiles.base],
+    [tiles.base],
+    [tiles.base],
+    [tiles.base],
+    [tiles.base, tiles.base]
   ],
   [
-    [tiles.dirt, tiles.grass],
-    [tiles.dirt, tiles.grass],
-    [tiles.dirt, tiles.grass],
-    [tiles.dirt, tiles.dirt, tiles.grass],
-    [tiles.grass],
-    [tiles.grass],
-    [tiles.dirt, tiles.grassSlopeLeft]
+    [tiles.base, tiles.base],
+    [tiles.base, tiles.base],
+    [tiles.base, tiles.base],
+    [tiles.base, tiles.base, tiles.base, tiles.base],
+    [tiles.base],
+    [tiles.base],
+    [tiles.base, tiles.baseSlopeL]
   ],
   [
-    [tiles.grass],
-    [tiles.grass],
-    [tiles.grass],
-    [tiles.grass],
-    [tiles.grass],
-    [tiles.grass],
-    [tiles.grass]
+    [tiles.base],
+    [tiles.base],
+    [tiles.base],
+    [tiles.base],
+    [tiles.base],
+    [tiles.base],
+    [tiles.base]
   ]
 ];
