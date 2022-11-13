@@ -108,3 +108,10 @@ export const pointRectCollision = (point: Point, rect: Rectangle) =>
   point.x <= rect.x + rect.w &&
   point.y >= rect.y &&
   point.y <= rect.y + rect.h;
+
+export const pipeBuilder = <A, B>(fn: (a: A) => B) => {
+  return {
+    add: <C>(g: (x: B) => C) => pipeBuilder((arg: A) => g(fn(arg))),
+    build: (a?: A) => fn(a as A)
+  };
+};
