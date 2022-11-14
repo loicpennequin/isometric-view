@@ -3,3 +3,4 @@ node_modules
 vercel
 *.svg
 src/map.ts
+src/assets/maps/*.json

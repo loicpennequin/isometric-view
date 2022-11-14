@@ -1,23 +1,35 @@
 import './style.css';
-import tilesetUrl from './assets/tilesets/tileset.png';
+import tilesetUrl from './assets/tilesets/base.png';
 import tilesetJSON from './assets/tilesets/tileset.json';
 import mapJSON from './assets/maps/map1.json';
-import { TileSet } from './models/TileSet';
 import { createCanvas } from './factories/createCanvas';
-import { GameMap } from './models/GameMap';
 import { createMouseTracker } from './factories/createMouseTracker';
+import { createTileSet } from './factories/createTileSet';
+import { createStage } from './factories/createStage';
+import { createCamera } from './factories/createCamera';
+import { createControls } from './factories/createControls';
 
-const tileset = new TileSet(tilesetJSON);
 const { canvas, ctx } = createCanvas({
   w: window.innerWidth,
   h: window.innerHeight
 });
+const tileset = createTileSet({ src: tilesetUrl, meta: tilesetJSON, ctx });
 const sceneOrigin = {
   x: window.innerWidth / 2,
   y: 250
 };
-const map = new GameMap({ ctx, meta: mapJSON, tileSet: tileset, sceneOrigin });
+const camera = createCamera();
 const mousePosition = createMouseTracker(canvas);
+const map = createStage({
+  ctx,
+  camera,
+  meta: mapJSON,
+  tileSet: tileset,
+  sceneOrigin: {
+    x: window.innerWidth / 2,
+    y: 250
+  }
+});
 
 function draw() {
   if (!ctx) return;
@@ -26,16 +38,19 @@ function draw() {
   ctx.save();
   ctx.translate(sceneOrigin.x, sceneOrigin.y);
 
-  map.updateHighlightedCellByMousePosition(mousePosition);
+  camera.apply(ctx);
+
+  map.updateHighlightedCell(mousePosition);
   map.draw();
-  // map.drawDebug();
   ctx.restore();
 
   return requestAnimationFrame(draw);
 }
 
-// document.addEventListener('click', () => {
-//   map.updateHighlightedCellByMousePosition(mousePosition);
-// });
 document.getElementById('app')?.appendChild(canvas);
-tileset.load(tilesetUrl).then(draw);
+
+tileset.ready.then(() => {
+  createControls({ canvas, camera });
+
+  draw();
+});
