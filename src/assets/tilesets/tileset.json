@@ -1,14 +1,107 @@
-{ "columns":8,
- "image":"tileset.png",
- "imageheight":512,
- "imagewidth":512,
- "margin":0,
- "name":"tileset",
- "spacing":0,
- "tilecount":64,
- "tiledversion":"1.9.2",
- "tileheight":64,
- "tilewidth":64,
- "type":"tileset",
- "version":"1.9"
+{
+  "columns": 8,
+  "image": "tileset.png",
+  "imageheight": 512,
+  "imagewidth": 512,
+  "margin": 0,
+  "name": "tileset",
+  "spacing": 0,
+  "tilecount": 64,
+  "tiledversion": "1.9.2",
+  "tileheight": 64,
+  "tiles": [
+    {
+      "id": 1,
+      "properties": [
+        {
+          "name": "slope",
+          "type": "bool",
+          "value": true
+        },
+        {
+          "name": "slopeDirection",
+          "type": "string",
+          "value": "NE"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "properties": [
+        {
+          "name": "slope",
+          "type": "bool",
+          "value": true
+        },
+        {
+          "name": "slopeDirection",
+          "type": "string",
+          "value": "NW"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "properties": [
+        {
+          "name": "slope",
+          "type": "bool",
+          "value": true
+        },
+        {
+          "name": "slopeDirection",
+          "type": "string",
+          "value": "NE"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "properties": [
+        {
+          "name": "slope",
+          "type": "bool",
+          "value": true
+        },
+        {
+          "name": "slopeDirection",
+          "type": "string",
+          "value": "NW"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "properties": [
+        {
+          "name": "slope",
+          "type": "bool",
+          "value": true
+        },
+        {
+          "name": "slopeDirection",
+          "type": "string",
+          "value": "SE"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "properties": [
+        {
+          "name": "slope",
+          "type": "bool",
+          "value": true
+        },
+        {
+          "name": "slopeDirection",
+          "type": "string",
+          "value": "SW"
+        }
+      ]
+    }
+  ],
+  "tilewidth": 64,
+  "type": "tileset",
+  "version": "1.9"
 }

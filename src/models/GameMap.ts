@@ -182,8 +182,11 @@ export class GameMap {
 
         const cellIndex = pos.y * layer.width + pos.x;
         const cellAtLayer = layer.data[cellIndex];
+        const isTopFloor = !this.meta.layers
+          .slice(i + 1)
+          .some(l => l.data[cellIndex]);
 
-        return cellAtLayer ? { ...pos, z: i } : acc;
+        return cellAtLayer && isTopFloor ? { ...pos, z: i } : acc;
       },
       { x: -1, y: -1, z: -1 }
     );
