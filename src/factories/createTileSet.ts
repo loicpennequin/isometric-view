@@ -39,7 +39,7 @@ export const createTileSet = ({ src, meta, ctx }: CreateTileSetOptions) => {
   };
 
   const draw = (tile: number, coords: Point, angle: number) => {
-    const tileAtAngle = tileMeta[tile]?.[angle];
+    const tileAtAngle = tileMeta[tile]?.[angle % 360];
     const tileCoords = getTileCoords(tileAtAngle ? tileAtAngle + 1 : tile);
 
     ctx.drawImage(

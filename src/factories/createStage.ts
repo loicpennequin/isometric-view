@@ -17,7 +17,6 @@ export type CreateStageOptions = {
   ctx: CanvasRenderingContext2D;
   meta: MapMeta;
   tileSet: TileSet;
-  sceneOrigin: Point;
   camera: Camera;
 };
 
@@ -39,7 +38,6 @@ export const createStage = ({
   ctx,
   meta,
   tileSet,
-  sceneOrigin,
   camera
 }: CreateStageOptions) => {
   let highlightedCell: Point3D = { x: -1, y: -1, z: -1 };
@@ -148,7 +146,7 @@ export const createStage = ({
 
   const updateHighlightedCell = (point: Point) => {
     const isoCoords = floorVector(
-      divVector(subVector(point, sceneOrigin), camera.view.scale)
+      divVector(subVector(point, camera.view), camera.view.scale)
     );
     const cellCoords = floorVector(toCartesian(isoCoords));
 
@@ -168,11 +166,11 @@ export const createStage = ({
 
         const cellIndex = pos.y * layer.width + pos.x;
         const cellAtLayer = getLayerData(layer)[cellIndex];
-        const isTopFloor = !meta.layers
-          .slice(i + 1)
-          .some(l => getLayerData(l)[cellIndex]);
+        const hasSpaceAbove = meta.layers[i + 1]
+          ? getLayerData(meta.layers[i + 1])[cellIndex] === 0
+          : true;
 
-        return cellAtLayer && isTopFloor ? { ...pos, z: i } : acc;
+        return cellAtLayer && hasSpaceAbove ? { ...pos, z: i } : acc;
       },
       { x: -1, y: -1, z: -1 }
     );

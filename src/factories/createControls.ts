@@ -3,15 +3,21 @@ import {
   CAMERA_MIN_SCALE,
   CAMERA_ROTATE_SCALE
 } from '@/constants';
-import { clamp } from '@/utils';
+import { Point } from '@/types';
+import { addVector, clamp, mulVector, subVector } from '@/utils';
 import { Camera } from './createCamera';
 
 export type CreateControlsOptions = {
   canvas: HTMLCanvasElement;
   camera: Camera;
+  mousePosition: Point;
 };
 
-export const createControls = ({ canvas, camera }: CreateControlsOptions) => {
+export const createControls = ({
+  canvas,
+  camera,
+  mousePosition
+}: CreateControlsOptions) => {
   canvas.addEventListener(
     'wheel',
     e => {
@@ -38,5 +44,23 @@ export const createControls = ({ canvas, camera }: CreateControlsOptions) => {
         });
         break;
     }
+  });
+
+  canvas.addEventListener('mousedown', e => {
+    let currentPosition = { ...mousePosition };
+
+    const update = () => {
+      const diff = mulVector(subVector(currentPosition, mousePosition), -1);
+      camera.update(addVector(camera.view, diff));
+      currentPosition = { ...mousePosition };
+    };
+
+    const stop = () => {
+      canvas.removeEventListener('mousemove', update);
+      canvas.removeEventListener('mouseup', stop);
+    };
+
+    canvas.addEventListener('mousemove', update);
+    canvas.addEventListener('mouseup', stop);
   });
 };

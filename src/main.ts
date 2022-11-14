@@ -14,21 +14,16 @@ const { canvas, ctx } = createCanvas({
   h: window.innerHeight
 });
 const tileset = createTileSet({ src: tilesetUrl, meta: tilesetJSON, ctx });
-const sceneOrigin = {
+const camera = createCamera({
   x: window.innerWidth / 2,
   y: 250
-};
-const camera = createCamera();
+});
 const mousePosition = createMouseTracker(canvas);
 const map = createStage({
   ctx,
   camera,
   meta: mapJSON,
-  tileSet: tileset,
-  sceneOrigin: {
-    x: window.innerWidth / 2,
-    y: 250
-  }
+  tileSet: tileset
 });
 
 function draw() {
@@ -36,7 +31,7 @@ function draw() {
 
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
   ctx.save();
-  ctx.translate(sceneOrigin.x, sceneOrigin.y);
+  // ctx.translate(camera.view.x, camera.view.y);
 
   camera.apply(ctx);
 
@@ -50,7 +45,7 @@ function draw() {
 document.getElementById('app')?.appendChild(canvas);
 
 tileset.ready.then(() => {
-  createControls({ canvas, camera });
+  createControls({ canvas, camera, mousePosition });
 
   draw();
 });
