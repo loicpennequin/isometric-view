@@ -26,8 +26,8 @@ export const createMatrix = <T>(
   dimensions: Dimensions,
   initialValue: (point: Point) => T
 ): Matrix<T> =>
-  Array.from({ length: dimensions.w }, (_, x) =>
-    Array.from({ length: dimensions.h }, (_, y) => initialValue({ x, y }))
+  Array.from({ length: dimensions.h }, (_, x) =>
+    Array.from({ length: dimensions.w }, (_, y) => initialValue({ x, y }))
   );
 
 export const matrixForEach = <T>(
@@ -123,4 +123,44 @@ export const diamond = (
   ctx.lineTo(x + w / 2, y + h / 2);
 
   ctx.closePath();
+};
+
+export const rotateMatrix = <T>(matrix: Matrix<T>, angle: number): T[] => {
+  if (angle % 90 !== 0) {
+    throw new Error('Invalid input; degrees must be a multiple of 90');
+  }
+
+  const deg = ((angle % 360) + 360) % 360;
+  const w = matrix.length;
+  const h = matrix[0].length;
+
+  let newMatrix = new Array(h);
+
+  if (deg === 90) {
+    for (let y = 0; y < h; y++) {
+      newMatrix[y] = new Array(w);
+      for (let x = 0; x < w; x++) {
+        newMatrix[y][x] = matrix[w - 1 - x][y];
+      }
+    }
+  } else if (deg === 180) {
+    for (let y = 0; y < h; y++) {
+      let n = h - 1 - y;
+      newMatrix[n] = new Array(w);
+      for (let x = 0; x < w; x++) {
+        newMatrix[n][w - 1 - x] = matrix[y][x];
+      }
+    }
+  } else if (deg === 270) {
+    for (let y = 0; y < h; y++) {
+      newMatrix[y] = new Array(w);
+      for (let x = 0; x < w; x++) {
+        newMatrix[y][x] = matrix[x][h - 1 - y];
+      }
+    }
+  } else {
+    newMatrix = matrix;
+  }
+
+  return newMatrix;
 };

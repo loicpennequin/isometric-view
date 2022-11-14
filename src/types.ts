@@ -7,22 +7,7 @@ export type Matrix<T> = T[][];
 export type Boundaries<T = number> = { min: T; max: T };
 export type Range = Boundaries<number>;
 export type Nullable<T> = T | null | undefined;
-
-export type TileSetMeta = {
-  columns: number;
-  image: string;
-  imageheight: number;
-  imagewidth: number;
-  margin: number;
-  name: string;
-  spacing: number;
-  tilecount: number;
-  tiledversion: string;
-  tileheight: number;
-  tilewidth: number;
-  type: string;
-  version: string;
-};
+export type AnyRecord = Record<string, any>;
 
 export type MapMeta = {
   compressionlevel: number;
@@ -56,3 +41,31 @@ export type MapMetaLayer = {
   offsety?: number;
   parallaxy?: number;
 };
+
+export interface TileSetMeta {
+  columns: number;
+  image: string;
+  imageheight: number;
+  imagewidth: number;
+  margin: number;
+  name: string;
+  spacing: number;
+  tilecount: number;
+  tiledversion: string;
+  tileheight: number;
+  tiles: TileMeta[];
+  tilewidth: number;
+  type: string;
+  version: string;
+}
+
+export interface TileMeta {
+  id: number;
+  properties?: TileMetaProp[];
+}
+
+export interface TileMetaProp {
+  name: string;
+  type: string;
+  value: any;
+}

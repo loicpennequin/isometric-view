@@ -1,3 +1,8 @@
+import {
+  CAMERA_MAX_SCALE,
+  CAMERA_MIN_SCALE,
+  CAMERA_ROTATE_SCALE
+} from '@/constants';
 import { clamp } from '@/utils';
 import { Camera } from './createCamera';
 
@@ -11,12 +16,27 @@ export const createControls = ({ canvas, camera }: CreateControlsOptions) => {
     'wheel',
     e => {
       camera.update({
-        scale: clamp(camera.view.scale + (e.deltaY > 0 ? 0.05 : -0.05), {
-          min: 0.25,
-          max: 1.5
+        scale: clamp(camera.view.scale + (e.deltaY > 0 ? 0.1 : -0.1), {
+          min: CAMERA_MIN_SCALE,
+          max: CAMERA_MAX_SCALE
         })
       });
     },
     false
   );
+
+  document.addEventListener('keyup', e => {
+    switch (e.code) {
+      case 'KeyQ':
+        camera.update({
+          angle: (camera.view.angle -= CAMERA_ROTATE_SCALE)
+        });
+        break;
+      case 'KeyE':
+        camera.update({
+          angle: (camera.view.angle += CAMERA_ROTATE_SCALE)
+        });
+        break;
+    }
+  });
 };

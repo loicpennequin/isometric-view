@@ -3,10 +3,12 @@ import { MapMeta, MapMetaLayer, Point, Point3D, Rectangle } from '@/types';
 import {
   addVector,
   cartesianToIsometric,
+  createMatrix,
   diamond,
   divVector,
   floorVector,
   mulVector,
+  rotateMatrix,
   subVector
 } from '@/utils';
 import { Camera } from './createCamera';
@@ -51,6 +53,15 @@ export const createStage = ({
       debug ? { x: 0, y: 0 } : stageOffset
     );
 
+  const getLayerData = (layer: MapMetaLayer) => {
+    const matrix = createMatrix(
+      { w: meta.width, h: meta.height },
+      ({ x, y }) => layer.data[x * meta.height + y]
+    );
+
+    return rotateMatrix<number>(matrix, camera.view.angle).flat();
+  };
+
   const getCellCoords = (layer: MapMetaLayer, index: number): Point => ({
     x: index % layer.width,
     y: Math.floor(index / layer.height)
@@ -76,7 +87,8 @@ export const createStage = ({
   const drawLayers = ({ drawCell, debug = false }: DrawLayersOptions) => {
     meta.layers.forEach((layer, layerIndex) => {
       if (debug && layerIndex > 0) return;
-      layer.data.forEach((tile, index) => {
+
+      getLayerData(layer).forEach((tile, index) => {
         const isHighlighted = isCellHighlighted(layerIndex, index);
         const { w, h } = tileSet.getTileCoords(tile);
         const cellCoords = getCellCoords(layer, index);
@@ -128,7 +140,7 @@ export const createStage = ({
 
         if (isHighlighted) ctx.filter = 'brightness(200%)';
 
-        tileSet.draw(tile, { x, y });
+        tileSet.draw(tile, { x, y }, camera.view.angle);
         ctx.restore();
       }
     });
@@ -155,10 +167,10 @@ export const createStage = ({
         if (isOutOfBounds) return acc;
 
         const cellIndex = pos.y * layer.width + pos.x;
-        const cellAtLayer = layer.data[cellIndex];
+        const cellAtLayer = getLayerData(layer)[cellIndex];
         const isTopFloor = !meta.layers
           .slice(i + 1)
-          .some(l => l.data[cellIndex]);
+          .some(l => getLayerData(l)[cellIndex]);
 
         return cellAtLayer && isTopFloor ? { ...pos, z: i } : acc;
       },
