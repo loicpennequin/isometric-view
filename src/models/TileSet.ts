@@ -11,8 +11,7 @@ export class TileSet {
     });
   }
 
-  private getTileCoords(n: number): Rectangle {
-    console.log(n, this.meta.columns);
+  getTileCoords(n: number): Rectangle {
     return {
       x: ((n - 1) % this.meta.columns) * this.meta.tilewidth,
       y: Math.floor(n / this.meta.columns) * this.meta.tileheight,

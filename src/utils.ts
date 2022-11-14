@@ -10,7 +10,7 @@ import {
 
 export const cartesianToIsometric = (point: Point) => ({
   x: point.x - point.y,
-  y: (point.x + point.y) / 2
+  y: point.x + point.y
 });
 
 export const isometricToCartesian = (point: Point) => ({
@@ -109,9 +109,18 @@ export const pointRectCollision = (point: Point, rect: Rectangle) =>
   point.y >= rect.y &&
   point.y <= rect.y + rect.h;
 
-export const pipeBuilder = <A, B>(fn: (a: A) => B) => {
-  return {
-    add: <C>(g: (x: B) => C) => pipeBuilder((arg: A) => g(fn(arg))),
-    build: (a?: A) => fn(a as A)
-  };
+export const diamond = (
+  ctx: CanvasRenderingContext2D,
+  { x, y, w, h }: Rectangle
+) => {
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+
+  ctx.lineTo(x - w / 2, y + h / 2);
+
+  ctx.lineTo(x, y + h);
+
+  ctx.lineTo(x + w / 2, y + h / 2);
+
+  ctx.closePath();
 };
