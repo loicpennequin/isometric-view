@@ -29,7 +29,7 @@ const stage = createStage({
 });
 
 const player = createEntity({
-  position: { x: 15, y: 10, z: 0 },
+  position: { x: 1, y: 3, z: 0 },
   stage
 });
 
@@ -53,7 +53,7 @@ function draw() {
 document.getElementById('app')?.appendChild(canvas);
 
 tileset.ready.then(() => {
-  createControls({ canvas, camera, mousePosition });
+  createControls({ canvas, camera, mousePosition, player });
 
   draw();
 });

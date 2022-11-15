@@ -20,6 +20,7 @@
     }
   },
   "include": ["src"],
+  "exclude": ["src/assets"],
   "references": [
     {
       "path": "./tsconfig.config.json"

@@ -4,19 +4,22 @@ import {
   CAMERA_ROTATE_SCALE
 } from '@/constants';
 import { Point } from '@/types';
-import { addVector, clamp, mulVector, subVector } from '@/utils';
+import { addVector, clamp, clampVector, mulVector, subVector } from '@/utils';
 import { Camera } from './createCamera';
+import { Entity } from './createEntity';
 
 export type CreateControlsOptions = {
   canvas: HTMLCanvasElement;
   camera: Camera;
   mousePosition: Point;
+  player: Entity;
 };
 
 export const createControls = ({
   canvas,
   camera,
-  mousePosition
+  mousePosition,
+  player
 }: CreateControlsOptions) => {
   canvas.addEventListener(
     'wheel',
@@ -46,7 +49,7 @@ export const createControls = ({
     }
   });
 
-  canvas.addEventListener('mousedown', e => {
+  canvas.addEventListener('mousedown', () => {
     let currentPosition = { ...mousePosition };
 
     const update = () => {
@@ -62,5 +65,42 @@ export const createControls = ({
 
     canvas.addEventListener('mousemove', update);
     canvas.addEventListener('mouseup', stop);
+  });
+
+  let controls = {
+    x: 0,
+    y: 0
+  };
+
+  const handleKeyboard = (e: KeyboardEvent) => {
+    switch (e.code) {
+      case 'ArrowUp':
+        controls.x--;
+        controls.y--;
+        break;
+      case 'ArrowDown':
+        controls.x++;
+        controls.y++;
+        break;
+      case 'ArrowLeft':
+        controls.x--;
+        controls.y++;
+        break;
+      case 'ArrowRight':
+        controls.y--;
+        controls.x++;
+        break;
+    }
+
+    controls = clampVector(controls, {
+      min: { x: -1, y: -1 },
+      max: { x: 1, y: 1 }
+    });
+  };
+  document.addEventListener('keydown', handleKeyboard);
+  document.addEventListener('keyup', () => {
+    if (controls.x === 0 && controls.y === 0) return;
+    player.move({ ...controls, z: 0 });
+    controls = { x: 0, y: 0 };
   });
 };

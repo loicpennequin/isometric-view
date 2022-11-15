@@ -13,7 +13,13 @@
          "id":0
         }, 
         {
-         "id":1
+         "id":1,
+         "properties":[
+                {
+                 "name":"slope",
+                 "type":"string",
+                 "value":"all"
+                }]
         }, 
         {
          "id":2
@@ -50,6 +56,11 @@
                  "name":"90",
                  "type":"int",
                  "value":9
+                }, 
+                {
+                 "name":"slope",
+                 "type":"string",
+                 "value":"ne"
                 }]
         }, 
         {
@@ -69,25 +80,11 @@
                  "name":"90",
                  "type":"int",
                  "value":8
-                }]
-        }, 
-        {
-         "id":11,
-         "properties":[
-                {
-                 "name":"180",
-                 "type":"int",
-                 "value":9
                 }, 
                 {
-                 "name":"270",
-                 "type":"int",
-                 "value":10
-                }, 
-                {
-                 "name":"90",
-                 "type":"int",
-                 "value":8
+                 "name":"slope",
+                 "type":"string",
+                 "value":"se"
                 }]
         }, 
         {
@@ -107,6 +104,35 @@
                  "name":"90",
                  "type":"int",
                  "value":11
+                }, 
+                {
+                 "name":"slope",
+                 "type":"string",
+                 "value":"sw"
+                }]
+        }, 
+        {
+         "id":11,
+         "properties":[
+                {
+                 "name":"180",
+                 "type":"int",
+                 "value":9
+                }, 
+                {
+                 "name":"270",
+                 "type":"int",
+                 "value":10
+                }, 
+                {
+                 "name":"90",
+                 "type":"int",
+                 "value":8
+                }, 
+                {
+                 "name":"slope",
+                 "type":"string",
+                 "value":"nw"
                 }]
         }, 
         {

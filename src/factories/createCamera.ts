@@ -1,4 +1,4 @@
-import { Nullable, Point } from '@/types';
+import { Point } from '@/types';
 
 export type CreateCameraOptions = {
   ctx: CanvasRenderingContext2D;

@@ -5,7 +5,11 @@
  </editorsettings>
  <image source="base.png" width="512" height="512"/>
  <tile id="0"/>
- <tile id="1"/>
+ <tile id="1">
+  <properties>
+   <property name="slope" value="all"/>
+  </properties>
+ </tile>
  <tile id="2"/>
  <tile id="3"/>
  <tile id="4"/>
@@ -17,6 +21,7 @@
    <property name="180" type="int" value="10"/>
    <property name="270" type="int" value="11"/>
    <property name="90" type="int" value="9"/>
+   <property name="slope" value="ne"/>
   </properties>
  </tile>
  <tile id="9">
@@ -24,13 +29,7 @@
    <property name="180" type="int" value="9"/>
    <property name="270" type="int" value="10"/>
    <property name="90" type="int" value="8"/>
-  </properties>
- </tile>
- <tile id="11">
-  <properties>
-   <property name="180" type="int" value="9"/>
-   <property name="270" type="int" value="10"/>
-   <property name="90" type="int" value="8"/>
+   <property name="slope" value="se"/>
   </properties>
  </tile>
  <tile id="10">
@@ -38,6 +37,15 @@
    <property name="180" type="int" value="8"/>
    <property name="270" type="int" value="9"/>
    <property name="90" type="int" value="11"/>
+   <property name="slope" value="sw"/>
+  </properties>
+ </tile>
+ <tile id="11">
+  <properties>
+   <property name="180" type="int" value="9"/>
+   <property name="270" type="int" value="10"/>
+   <property name="90" type="int" value="8"/>
+   <property name="slope" value="nw"/>
   </properties>
  </tile>
  <tile id="12"/>

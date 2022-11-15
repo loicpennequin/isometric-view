@@ -4,6 +4,7 @@ import {
   Dimensions,
   Matrix,
   Point,
+  Point3D,
   Range,
   Rectangle
 } from './types';
@@ -43,6 +44,12 @@ export const matrixForEach = <T>(
 export const addVector = (vec1: Point, vec2: Point) => ({
   x: vec1.x + vec2.x,
   y: vec1.y + vec2.y
+});
+
+export const addVector3D = (vec1: Point3D, vec2: Point3D) => ({
+  x: vec1.x + vec2.x,
+  y: vec1.y + vec2.y,
+  z: vec1.z + vec2.z
 });
 
 export const subVector = (vec1: Point, vec2: Point) => ({
@@ -125,7 +132,10 @@ export const diamond = (
   ctx.closePath();
 };
 
-export const rotateMatrix = <T>(matrix: Matrix<T>, angle: number): T[] => {
+export const rotateMatrix = <T>(
+  matrix: Matrix<T>,
+  angle: number
+): Matrix<T> => {
   if (angle % 90 !== 0) {
     throw new Error('Invalid input; degrees must be a multiple of 90');
   }

@@ -1,13 +1,6 @@
 import { StageLayerType } from '@/enums';
 import { TileSet } from '@/factories/createTileSet';
-import {
-  StageMeta,
-  StageLayerMeta,
-  Point,
-  Point3D,
-  Rectangle,
-  StageLayerObjectsMeta
-} from '@/types';
+import { StageMeta, StageLayerMeta, Point, Point3D, Rectangle } from '@/types';
 import {
   addVector,
   cartesianToIsometric,
@@ -177,24 +170,50 @@ export const createStage = ({
     });
   };
 
-  const getCellCoordsByPoint3D = (point: Point3D) => {
-    return {
-      x: point.x / meta.tileheight,
-      y: point.y / meta.tileheight,
-      z: point.z / meta.tileheight
-    };
+  const getRotatedPoint = (point: Point3D) => {
+    const layer = tileLayers[point.z];
+
+    const rotatedMatrix = rotateMatrix<Point>(
+      createMatrix({ w: layer.width, h: layer.height }, coords => coords),
+      camera.view.angle
+    );
+
+    const rotatedPoint = { x: 0, y: 0, z: point.z };
+    rotatedMatrix.forEach((row, rowIndex) => {
+      row.forEach((col, colIndex) => {
+        if (col.x === point.y && col.y === point.x) {
+          Object.assign(rotatedPoint, { x: colIndex, y: rowIndex });
+        }
+      });
+    });
+
+    return rotatedPoint;
+  };
+
+  const isWithinBounds = ({ x, y, z }: Point3D) => {
+    const layer = tileLayers[z];
+    return layer && x >= 0 && y >= 0 && x < layer.width && y < layer.height;
   };
 
   const getCellInfoByPoint3D = (point: Point3D) => {
-    const layer = tileLayers[point.z];
-    const layerData = getLayerData(layer);
-    const index = point.y * layer.width + point.x;
-    const tile = layerData[index];
-    const isHighlighted = isCellHighlighted(point.z, index);
-    const { w, h } = tileSet.getTileCoords(tile);
-    const { x, y } = addVector(toIsometric(point), getLayerOffset(layer));
+    if (!isWithinBounds(point)) {
+      return null;
+    }
 
-    return { tile, index, isHighlighted, x, y, w, h };
+    const rotatedPoint = getRotatedPoint(point);
+    const layer = tileLayers[rotatedPoint.z];
+    const layerData = getLayerData(layer);
+    const index = rotatedPoint.y * layer.width + rotatedPoint.x;
+    const tile = layerData[index];
+    const isHighlighted = isCellHighlighted(rotatedPoint.z, index);
+    const { w, h } = tileSet.getTileCoords(tile);
+    const { x, y } = addVector(
+      toIsometric(rotatedPoint),
+      getLayerOffset(layer)
+    );
+    const tileMeta = tileSet.tileMeta[tile] ?? {};
+
+    return { tile, tileMeta, index, point, isHighlighted, x, y, w, h };
   };
 
   const updateHighlightedCell = (point: Point) => {
@@ -231,14 +250,12 @@ export const createStage = ({
 
   return {
     meta,
+    tileLayers,
     objectsMeta,
     isCellHighlighted,
     drawDebug,
     draw,
     updateHighlightedCell,
-    getCellInfoByPoint3D,
-    getCellCoordsByPoint3D,
-    toIsometric,
-    toCartesian
+    getCellInfoByPoint3D
   };
 };
