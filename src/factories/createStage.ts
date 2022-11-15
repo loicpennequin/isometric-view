@@ -8,6 +8,7 @@ import {
   diamond,
   divVector,
   floorVector,
+  memoize,
   mulVector,
   rotateMatrix,
   subVector
@@ -87,13 +88,13 @@ export const createStage = ({
     return rotateMatrix<number>(matrix, camera.view.angle).flat();
   };
 
-  const getCellCoordsByIndex = (
-    layer: StageLayerMeta,
-    index: number
-  ): Point => ({
-    x: index % layer.width,
-    y: Math.floor(index / layer.height)
-  });
+  // const getCellCoordsByIndex = (
+  //   layer: StageLayerMeta,
+  //   index: number
+  // ): Point => ({
+  //   x: index % layer.width,
+  //   y: Math.floor(index / layer.height)
+  // });
 
   const toIsometric = ({ x, y }: Point) =>
     mulVector(cartesianToIsometric({ x, y }), halfSize);
@@ -112,16 +113,53 @@ export const createStage = ({
     index ===
       highlightedCell.y * tileLayers[layerIndex].width + highlightedCell.x;
 
-  const drawLayers = ({ drawCell, debug = false }: DrawLayersOptions) => {
-    tileLayers.forEach((layer, z) => {
-      if (debug && z > 0) return;
+  const getDepthSortedData = memoize((angle: number) => {
+    console.log(angle);
+    const rotatedLayers = tileLayers.map(layer => {
+      const matrix = createMatrix(
+        { w: meta.width, h: meta.height },
+        ({ x, y }) => layer.data[x * meta.height + y]
+      );
 
-      getLayerData(layer).forEach((_, index) => {
-        const cellCoords = { ...getCellCoordsByIndex(layer, index), z };
-        const cell = getCellInfoByPoint3D(cellCoords);
+      return rotateMatrix<number>(matrix, angle).flat();
+    });
 
-        drawCell(cell!);
+    const sorted: { point: Point3D; tile: number }[] = [];
+    rotatedLayers.forEach((layer, layerIndex) => {
+      layer.forEach((tile, cellIndex) => {
+        const i = cellIndex * rotatedLayers.length + layerIndex;
+        // console.log(
+        //   `putting cell ${cellIndex} of layer ${layerIndex} at index ${i}`
+        // );
+        const point = {
+          x: cellIndex % meta.width,
+          y: Math.floor(cellIndex / meta.height),
+          z: layerIndex
+        };
+        sorted[i] = {
+          tile,
+          point
+        };
       });
+    });
+
+    return sorted;
+  });
+
+  const drawLayers = ({ drawCell, debug = false }: DrawLayersOptions) => {
+    getDepthSortedData(camera.view.angle).forEach(({ point, tile }, index) => {
+      const z = index % tileLayers.length;
+      if (debug && z > 0) return;
+      const layer = tileLayers[z];
+      const layerCellIndex = Math.floor(index / tileLayers.length);
+      const isHighlighted = isCellHighlighted(z, layerCellIndex);
+      const { w, h } = tileSet.getTileCoords(tile);
+
+      const { x, y } = addVector(
+        toIsometric(point),
+        getLayerOffset(layer, debug)
+      );
+      drawCell({ tile, index, isHighlighted, point, x, y, w, h });
     });
   };
 
@@ -163,9 +201,8 @@ export const createStage = ({
         ctx.save();
         if (isHighlighted) ctx.filter = 'brightness(200%)';
         tileSet.draw(tile, { x, y }, camera.view.angle);
-        cb(cell);
-        cb;
         ctx.restore();
+        cb(cell);
       }
     });
   };
@@ -213,7 +250,18 @@ export const createStage = ({
     );
     const tileMeta = tileSet.tileMeta[tile] ?? {};
 
-    return { tile, tileMeta, index, point, isHighlighted, x, y, w, h };
+    return {
+      tile,
+      tileMeta,
+      index,
+      point,
+      rotatedPoint,
+      isHighlighted,
+      x,
+      y,
+      w,
+      h
+    };
   };
 
   const updateHighlightedCell = (point: Point) => {

@@ -19,7 +19,8 @@ const { canvas, ctx } = createCanvas({
 const tileset = createTileSet({ src: tilesetUrl, meta: tilesetJSON, ctx });
 const camera = createCamera({
   x: window.innerWidth / 2,
-  y: 250
+  y: 250,
+  angle: 180
 });
 const mousePosition = createMouseTracker(canvas);
 const stage = createStage({
@@ -30,7 +31,7 @@ const stage = createStage({
 });
 
 const player = createEntity({
-  position: { x: 0, y: 0, z: 2 },
+  position: { x: 12, y: 10, z: 0 },
   stage
 });
 
@@ -43,11 +44,14 @@ function draw() {
   camera.apply(ctx);
 
   stage.updateHighlightedCell(mousePosition);
+  const p = stage.getCellInfoByPoint3D(player.position);
+
   stage.draw(cell => {
-    if (vectorEquals3D(cell.point, player.position)) {
+    if (vectorEquals3D(cell.point, p!.rotatedPoint)) {
       player.draw(ctx);
     }
   });
+  // player.draw(ctx);
   ctx.restore();
 
   return requestAnimationFrame(draw);

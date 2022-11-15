@@ -189,3 +189,19 @@ export const rotateMatrix = <T>(
 
   return newMatrix;
 };
+
+export const memoize = <TArgs extends any[], TReturn>(
+  fn: (...args: TArgs) => TReturn
+) => {
+  const cache = new Map<string, TReturn>();
+
+  return (...args: TArgs) => {
+    const key = JSON.stringify(args);
+    if (cache.has(key)) return cache.get(key) as TReturn;
+
+    const val = fn(...args);
+    cache.set(key, val);
+
+    return val;
+  };
+};
