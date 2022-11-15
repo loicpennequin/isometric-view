@@ -8,7 +8,7 @@ export type CreateTileSetOptions = {
 
 export type TileSet = ReturnType<typeof createTileSet>;
 
-type TileMeta = Record<number, AnyRecord>;
+export type TileMeta = Record<number, AnyRecord>;
 
 export const createTileSet = ({ src, meta, ctx }: CreateTileSetOptions) => {
   const img = Object.assign(new Image(), { src });
@@ -16,17 +16,19 @@ export const createTileSet = ({ src, meta, ctx }: CreateTileSetOptions) => {
     img.addEventListener('load', resolve);
   });
 
-  const tileMeta: TileMeta = Object.fromEntries(
-    meta.tiles.map(tile => {
-      return [
-        tile.id + 1, // map JSON files add one to its layer data
-        tile.properties
-          ? Object.fromEntries(
-              tile.properties.map(prop => [prop.name, prop.value])
-            )
-          : {}
-      ];
-    })
+  const tileMeta: Readonly<TileMeta> = Object.freeze(
+    Object.fromEntries(
+      meta.tiles.map(tile => {
+        return [
+          tile.id + 1, // map JSON files add one to its layer data
+          tile.properties
+            ? Object.fromEntries(
+                tile.properties.map(prop => [prop.name, prop.value])
+              )
+            : {}
+        ];
+      })
+    )
   );
 
   const getTileCoords = (n: number): Rectangle => {
@@ -57,6 +59,7 @@ export const createTileSet = ({ src, meta, ctx }: CreateTileSetOptions) => {
 
   return {
     ready,
+    tileMeta,
     getTileCoords,
     draw
   };

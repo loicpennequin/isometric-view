@@ -8,6 +8,8 @@ import { createTileSet } from './factories/createTileSet';
 import { createStage } from './factories/createStage';
 import { createCamera } from './factories/createCamera';
 import { createControls } from './factories/createControls';
+import { StageMeta } from './types';
+import { createEntity } from './factories/createEntity';
 
 const { canvas, ctx } = createCanvas({
   w: window.innerWidth,
@@ -19,11 +21,16 @@ const camera = createCamera({
   y: 250
 });
 const mousePosition = createMouseTracker(canvas);
-const map = createStage({
+const stage = createStage({
   ctx,
   camera,
-  meta: mapJSON,
+  meta: mapJSON as StageMeta,
   tileSet: tileset
+});
+
+const player = createEntity({
+  position: { x: 15, y: 10, z: 0 },
+  stage
 });
 
 function draw() {
@@ -31,12 +38,13 @@ function draw() {
 
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
   ctx.save();
-  // ctx.translate(camera.view.x, camera.view.y);
 
   camera.apply(ctx);
 
-  map.updateHighlightedCell(mousePosition);
-  map.draw();
+  stage.updateHighlightedCell(mousePosition);
+  stage.draw();
+  // stage.drawDebug();
+  player.draw(ctx);
   ctx.restore();
 
   return requestAnimationFrame(draw);

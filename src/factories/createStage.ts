@@ -1,5 +1,13 @@
+import { StageLayerType } from '@/enums';
 import { TileSet } from '@/factories/createTileSet';
-import { MapMeta, MapMetaLayer, Point, Point3D, Rectangle } from '@/types';
+import {
+  StageMeta,
+  StageLayerMeta,
+  Point,
+  Point3D,
+  Rectangle,
+  StageLayerObjectsMeta
+} from '@/types';
 import {
   addVector,
   cartesianToIsometric,
@@ -15,7 +23,7 @@ import { Camera } from './createCamera';
 
 export type CreateStageOptions = {
   ctx: CanvasRenderingContext2D;
-  meta: MapMeta;
+  meta: StageMeta;
   tileSet: TileSet;
   camera: Camera;
 };
@@ -24,7 +32,7 @@ export type Stage = ReturnType<typeof createStage>;
 
 type DrawCellOptions = Rectangle & {
   isHighlighted: boolean;
-  cellCoords: Point;
+  cellCoords: Point3D;
   tile: number;
   index: number;
 };
@@ -43,15 +51,39 @@ export const createStage = ({
   let highlightedCell: Point3D = { x: -1, y: -1, z: -1 };
   const size: Point = { x: meta.tilewidth, y: meta.tileheight };
   const halfSize: Point = divVector(size, 2);
-  const stageOffset: Point = { x: -meta.tilewidth / 2, y: 0 };
+  const stageOffset: Point = { x: meta.tilewidth / 2, y: 0 };
 
-  const getLayerOffset = (layer: MapMetaLayer, debug?: boolean): Point =>
+  const tileLayers = meta.layers.filter(
+    layer => layer.type === StageLayerType.TILES
+  );
+
+  const objectsMeta = Object.freeze(
+    meta.layers
+      .filter(layer => layer.type === StageLayerType.OBJECTS)
+      .map(layer =>
+        Object.fromEntries(
+          layer.objects!.map(obj => [
+            obj.name,
+            {
+              ...obj,
+              properties: Object.fromEntries(
+                (obj.properties ?? []).map(prop => [prop.name, prop.value])
+              )
+            }
+          ])
+        )
+      )
+      .flat()
+      .reduce(Object.assign)
+  );
+
+  const getLayerOffset = (layer: StageLayerMeta, debug?: boolean): Point =>
     addVector(
       { x: layer.offsetx ?? 0, y: layer.offsety ?? 0 },
       debug ? { x: 0, y: 0 } : stageOffset
     );
 
-  const getLayerData = (layer: MapMetaLayer) => {
+  const getLayerData = (layer: StageLayerMeta) => {
     const matrix = createMatrix(
       { w: meta.width, h: meta.height },
       ({ x, y }) => layer.data[x * meta.height + y]
@@ -60,7 +92,10 @@ export const createStage = ({
     return rotateMatrix<number>(matrix, camera.view.angle).flat();
   };
 
-  const getCellCoords = (layer: MapMetaLayer, index: number): Point => ({
+  const getCellCoordsByIndex = (
+    layer: StageLayerMeta,
+    index: number
+  ): Point => ({
     x: index % layer.width,
     y: Math.floor(index / layer.height)
   });
@@ -80,16 +115,16 @@ export const createStage = ({
   const isCellHighlighted = (layerIndex: number, index: number) =>
     layerIndex == highlightedCell.z &&
     index ===
-      highlightedCell.y * meta.layers[layerIndex].width + highlightedCell.x;
+      highlightedCell.y * tileLayers[layerIndex].width + highlightedCell.x;
 
   const drawLayers = ({ drawCell, debug = false }: DrawLayersOptions) => {
-    meta.layers.forEach((layer, layerIndex) => {
-      if (debug && layerIndex > 0) return;
+    tileLayers.forEach((layer, z) => {
+      if (debug && z > 0) return;
 
       getLayerData(layer).forEach((tile, index) => {
-        const isHighlighted = isCellHighlighted(layerIndex, index);
+        const isHighlighted = isCellHighlighted(z, index);
         const { w, h } = tileSet.getTileCoords(tile);
-        const cellCoords = getCellCoords(layer, index);
+        const cellCoords = { ...getCellCoordsByIndex(layer, index), z };
         const { x, y } = addVector(
           toIsometric(cellCoords),
           getLayerOffset(layer, debug)
@@ -135,13 +170,31 @@ export const createStage = ({
     drawLayers({
       drawCell({ tile, isHighlighted, x, y }) {
         ctx.save();
-
         if (isHighlighted) ctx.filter = 'brightness(200%)';
-
         tileSet.draw(tile, { x, y }, camera.view.angle);
         ctx.restore();
       }
     });
+  };
+
+  const getCellCoordsByPoint3D = (point: Point3D) => {
+    return {
+      x: point.x / meta.tileheight,
+      y: point.y / meta.tileheight,
+      z: point.z / meta.tileheight
+    };
+  };
+
+  const getCellInfoByPoint3D = (point: Point3D) => {
+    const layer = tileLayers[point.z];
+    const layerData = getLayerData(layer);
+    const index = point.y * layer.width + point.x;
+    const tile = layerData[index];
+    const isHighlighted = isCellHighlighted(point.z, index);
+    const { w, h } = tileSet.getTileCoords(tile);
+    const { x, y } = addVector(toIsometric(point), getLayerOffset(layer));
+
+    return { tile, index, isHighlighted, x, y, w, h };
   };
 
   const updateHighlightedCell = (point: Point) => {
@@ -150,7 +203,7 @@ export const createStage = ({
     );
     const cellCoords = floorVector(toCartesian(isoCoords));
 
-    highlightedCell = meta.layers.reduce(
+    highlightedCell = tileLayers.reduce(
       (acc, layer, i) => {
         const pos = addVector(cellCoords, {
           x: i,
@@ -166,8 +219,8 @@ export const createStage = ({
 
         const cellIndex = pos.y * layer.width + pos.x;
         const cellAtLayer = getLayerData(layer)[cellIndex];
-        const hasSpaceAbove = meta.layers[i + 1]
-          ? getLayerData(meta.layers[i + 1])[cellIndex] === 0
+        const hasSpaceAbove = tileLayers[i + 1]
+          ? getLayerData(tileLayers[i + 1])[cellIndex] === 0
           : true;
 
         return cellAtLayer && hasSpaceAbove ? { ...pos, z: i } : acc;
@@ -177,9 +230,15 @@ export const createStage = ({
   };
 
   return {
+    meta,
+    objectsMeta,
     isCellHighlighted,
     drawDebug,
     draw,
-    updateHighlightedCell
+    updateHighlightedCell,
+    getCellInfoByPoint3D,
+    getCellCoordsByPoint3D,
+    toIsometric,
+    toCartesian
   };
 };

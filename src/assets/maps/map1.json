@@ -144,9 +144,37 @@
          "width":16,
          "x":0,
          "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":6,
+         "name":"Objects",
+         "objects":[
+                {
+                 "class":"",
+                 "height":32,
+                 "id":3,
+                 "name":"playerStartPosition",
+                 "properties":[
+                        {
+                         "name":"z",
+                         "type":"int",
+                         "value":0
+                        }],
+                 "rotation":0,
+                 "visible":true,
+                 "width":32,
+                 "x":448,
+                 "y":288
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
         }],
- "nextlayerid":6,
- "nextobjectid":1,
+ "nextlayerid":7,
+ "nextobjectid":4,
  "orientation":"isometric",
  "renderorder":"right-down",
  "tiledversion":"1.9.2",
