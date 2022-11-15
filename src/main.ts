@@ -10,6 +10,7 @@ import { createCamera } from './factories/createCamera';
 import { createControls } from './factories/createControls';
 import { StageMeta } from './types';
 import { createEntity } from './factories/createEntity';
+import { vectorEquals3D } from './utils';
 
 const { canvas, ctx } = createCanvas({
   w: window.innerWidth,
@@ -29,7 +30,7 @@ const stage = createStage({
 });
 
 const player = createEntity({
-  position: { x: 1, y: 1, z: 1 },
+  position: { x: 0, y: 0, z: 2 },
   stage
 });
 
@@ -42,9 +43,11 @@ function draw() {
   camera.apply(ctx);
 
   stage.updateHighlightedCell(mousePosition);
-  stage.draw();
-  // stage.drawDebug();
-  player.draw(ctx);
+  stage.draw(cell => {
+    if (vectorEquals3D(cell.point, player.position)) {
+      player.draw(ctx);
+    }
+  });
   ctx.restore();
 
   return requestAnimationFrame(draw);

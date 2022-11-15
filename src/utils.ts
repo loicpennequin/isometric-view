@@ -101,6 +101,9 @@ export const clampVector = (
 export const vectorEquals = (vec1: Point, vec2: Point) =>
   vec1.x === vec2.x && vec1.y === vec2.y;
 
+export const vectorEquals3D = (vec1: Point3D, vec2: Point3D) =>
+  vec1.x === vec2.x && vec1.y === vec2.y && vec1.z === vec2.z;
+
 export const rotateVector = ({ x, y }: Point, deg: number) => {
   const angle = deg2rad(-deg);
 

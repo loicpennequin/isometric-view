@@ -81,7 +81,9 @@ export const withMovement = <T extends WithMovementBase>(base: T) => {
         return toCellAbove?.tile === 0 ? toCell?.point : from;
       }
       if (isDownward) {
-        return toCellBelow?.tile === 0 ? toCell?.point : from;
+        return toCellBelow?.tileMeta?.slope === fromSlope || toCell?.tile === 0
+          ? toCellBelow?.point
+          : from;
       }
 
       return from;

@@ -23,15 +23,15 @@ export type CreateStageOptions = {
 
 export type Stage = ReturnType<typeof createStage>;
 
-type DrawCellOptions = Rectangle & {
+export type CellInfos = Rectangle & {
   isHighlighted: boolean;
-  cellCoords: Point3D;
+  point: Point3D;
   tile: number;
   index: number;
 };
 
 type DrawLayersOptions = {
-  drawCell: (opts: DrawCellOptions) => void;
+  drawCell: (opts: CellInfos) => void;
   debug?: boolean;
 };
 
@@ -69,6 +69,8 @@ export const createStage = ({
       .flat()
       .reduce(Object.assign)
   );
+
+  const getObject = (key: string) => objectsMeta[key];
 
   const getLayerOffset = (layer: StageLayerMeta, debug?: boolean): Point =>
     addVector(
@@ -114,16 +116,11 @@ export const createStage = ({
     tileLayers.forEach((layer, z) => {
       if (debug && z > 0) return;
 
-      getLayerData(layer).forEach((tile, index) => {
-        const isHighlighted = isCellHighlighted(z, index);
-        const { w, h } = tileSet.getTileCoords(tile);
+      getLayerData(layer).forEach((_, index) => {
         const cellCoords = { ...getCellCoordsByIndex(layer, index), z };
-        const { x, y } = addVector(
-          toIsometric(cellCoords),
-          getLayerOffset(layer, debug)
-        );
+        const cell = getCellInfoByPoint3D(cellCoords);
 
-        drawCell({ tile, index, isHighlighted, cellCoords, x, y, w, h });
+        drawCell(cell!);
       });
     });
   };
@@ -131,7 +128,7 @@ export const createStage = ({
   const drawDebug = () => {
     drawLayers({
       debug: true,
-      drawCell({ cellCoords, x, y, w, h }) {
+      drawCell({ point, x, y, w, h }) {
         diamond(ctx, {
           x,
           y: y + meta.tileheight,
@@ -154,17 +151,20 @@ export const createStage = ({
 
         ctx.textBaseline = 'top';
         ctx.font = '12px Helvetica';
-        ctx.fillText(`${cellCoords.x} : ${cellCoords.y}`, x - halfSize.x, y);
+        ctx.fillText(`${point.x} : ${point.y}`, x - halfSize.x, y);
       }
     });
   };
 
-  const draw = () => {
+  const draw = (cb: (cell: CellInfos) => void) => {
     drawLayers({
-      drawCell({ tile, isHighlighted, x, y }) {
+      drawCell(cell) {
+        const { tile, isHighlighted, x, y } = cell;
         ctx.save();
         if (isHighlighted) ctx.filter = 'brightness(200%)';
         tileSet.draw(tile, { x, y }, camera.view.angle);
+        cb(cell);
+        cb;
         ctx.restore();
       }
     });
@@ -251,10 +251,7 @@ export const createStage = ({
   };
 
   return {
-    meta,
-    tileLayers,
-    objectsMeta,
-    isCellHighlighted,
+    getObject,
     drawDebug,
     draw,
     updateHighlightedCell,
