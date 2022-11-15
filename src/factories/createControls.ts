@@ -107,7 +107,6 @@ export const createControls = ({
   document.addEventListener('keydown', handleKeyboard);
   document.addEventListener('keyup', () => {
     if (controls.x === 0 && controls.y === 0) return;
-    console.log(controls);
 
     player.move({ ...rotateVector(controls, camera.view.angle), z: 0 });
     controls = { x: 0, y: 0 };

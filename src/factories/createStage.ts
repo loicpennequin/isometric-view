@@ -218,10 +218,12 @@ export const createStage = ({
 
   const updateHighlightedCell = (point: Point) => {
     const isoCoords = floorVector(
-      divVector(subVector(point, camera.view), camera.view.scale)
+      divVector(
+        subVector(point, addVector(camera.view, stageOffset)),
+        camera.view.scale
+      )
     );
     const cellCoords = floorVector(toCartesian(isoCoords));
-
     highlightedCell = tileLayers.reduce(
       (acc, layer, i) => {
         const pos = addVector(cellCoords, {
