@@ -104,7 +104,6 @@ export const withMovement = <T extends WithMovementBase>(base: T) => {
   const move = (diff: Point3D) => {
     const target = addVector3D(base.position, diff);
     Object.assign(base.position, updatePosition(base.position, target));
-    console.log(base.position);
   };
 
   return Object.assign({}, base, { move });

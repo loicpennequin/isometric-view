@@ -4,7 +4,14 @@ import {
   CAMERA_ROTATE_SCALE
 } from '@/constants';
 import { Point } from '@/types';
-import { addVector, clamp, clampVector, mulVector, subVector } from '@/utils';
+import {
+  addVector,
+  clamp,
+  clampVector,
+  mulVector,
+  rotateVector,
+  subVector
+} from '@/utils';
 import { Camera } from './createCamera';
 import { Entity } from './createEntity';
 
@@ -100,7 +107,9 @@ export const createControls = ({
   document.addEventListener('keydown', handleKeyboard);
   document.addEventListener('keyup', () => {
     if (controls.x === 0 && controls.y === 0) return;
-    player.move({ ...controls, z: 0 });
+    console.log(controls);
+
+    player.move({ ...rotateVector(controls, camera.view.angle), z: 0 });
     controls = { x: 0, y: 0 };
   });
 };

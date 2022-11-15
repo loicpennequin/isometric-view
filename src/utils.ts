@@ -101,6 +101,18 @@ export const clampVector = (
 export const vectorEquals = (vec1: Point, vec2: Point) =>
   vec1.x === vec2.x && vec1.y === vec2.y;
 
+export const rotateVector = ({ x, y }: Point, deg: number) => {
+  const angle = deg2rad(-deg);
+
+  var cos = Math.cos(angle);
+  var sin = Math.sin(angle);
+
+  return {
+    x: Math.round(10000 * (x * cos - y * sin)) / 10000,
+    y: Math.round(10000 * (x * sin + y * cos)) / 10000
+  };
+};
+
 export const circle = (ctx: CanvasRenderingContext2D, { x, y, r }: Circle) => {
   ctx.beginPath();
   ctx.arc(x, y, r, 0, 2 * Math.PI, false);
