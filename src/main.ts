@@ -29,7 +29,7 @@ const stage = createStage({
 });
 
 const player = createEntity({
-  position: { x: 1, y: 3, z: 0 },
+  position: { x: 1, y: 1, z: 1 },
   stage
 });
 

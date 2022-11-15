@@ -1,5 +1,5 @@
 // import { TileSlope } from '@/enums';
-import { Direction, TileSlope } from '@/enums';
+import { Direction, Tileslope, TileSlope } from '@/enums';
 import { Stage } from '@/factories/createStage';
 import { Point3D } from '@/types';
 import { addVector3D } from '@/utils';
@@ -27,71 +27,62 @@ export const withMovement = <T extends WithMovementBase>(base: T) => {
     return null;
   };
 
+  const isSlopeAndDirectionEqual = (slope: Tileslope, direction: Direction) =>
+    (slope === TileSlope.NORTH_WEST && direction === Direction.NORTH_WEST) ||
+    (slope === TileSlope.NORTH_EAST && direction === Direction.NORTH_EAST) ||
+    (slope === TileSlope.SOUTH_EAST && direction === Direction.SOUTH_EAST) ||
+    (slope === TileSlope.SOUTH_WEST && direction === Direction.SOUTH_WEST);
+
+  const isSlopeAndDirectionInverted = (
+    slope: Tileslope,
+    direction: Direction
+  ) =>
+    (slope === TileSlope.NORTH_WEST && direction === Direction.SOUTH_EAST) ||
+    (slope === TileSlope.NORTH_EAST && direction === Direction.SOUTH_WEST) ||
+    (slope === TileSlope.SOUTH_EAST && direction === Direction.NORTH_WEST) ||
+    (slope === TileSlope.SOUTH_WEST && direction === Direction.NORTH_EAST);
+
   const updatePosition = (from: Point3D, to: Point3D) => {
     const { stage } = base;
     const direction = getDirection(from, to);
     if (!direction) return;
 
-    const toCell = stage.getCellInfoByPoint3D(to);
     const fromCell = stage.getCellInfoByPoint3D(from);
+    const toCell = stage.getCellInfoByPoint3D(to);
     const toCellAbove = stage.getCellInfoByPoint3D({ ...to, z: to.z + 1 });
     const toCellBelow = stage.getCellInfoByPoint3D({ ...to, z: to.z - 1 });
-    const toAboveSlope = toCellAbove?.tileMeta.slope;
-    const toSlope = toCell?.tileMeta.slope;
+    const upwardSlope = toCellAbove?.tileMeta.slope;
+    const downwardSlope = toCell?.tileMeta.slope;
     const fromSlope = fromCell?.tileMeta?.slope;
 
-    if (toAboveSlope) {
+    if (upwardSlope) {
       const isAvailable =
-        toAboveSlope === TileSlope.ALL ||
-        (toAboveSlope === TileSlope.NORTH_WEST &&
-          direction === Direction.NORTH_WEST) ||
-        (toAboveSlope === TileSlope.NORTH_EAST &&
-          direction === Direction.NORTH_EAST) ||
-        (toAboveSlope === TileSlope.SOUTH_EAST &&
-          direction === Direction.SOUTH_EAST) ||
-        (toAboveSlope === TileSlope.SOUTH_WEST &&
-          direction === Direction.SOUTH_WEST);
+        upwardSlope === TileSlope.ALL ||
+        isSlopeAndDirectionEqual(upwardSlope, direction);
+
       return isAvailable ? toCellAbove.point : from;
     }
-    if (toSlope) {
+    if (downwardSlope) {
       const isAvailable =
-        toSlope === TileSlope.ALL ||
-        (toSlope === TileSlope.NORTH_WEST &&
-          direction === Direction.SOUTH_EAST) ||
-        (toSlope === TileSlope.NORTH_EAST &&
-          direction === Direction.SOUTH_WEST) ||
-        (toSlope === TileSlope.SOUTH_EAST &&
-          direction === Direction.NORTH_WEST) ||
-        (toSlope === TileSlope.SOUTH_WEST &&
-          direction === Direction.NORTH_EAST);
+        downwardSlope === TileSlope.ALL ||
+        isSlopeAndDirectionInverted(downwardSlope, direction);
+
       return isAvailable ? toCell?.point : from;
     }
     if (fromSlope) {
-      const isUpward =
-        (fromSlope === TileSlope.NORTH_WEST &&
-          direction === Direction.NORTH_WEST) ||
-        (fromSlope === TileSlope.NORTH_EAST &&
-          direction === Direction.NORTH_EAST) ||
-        (fromSlope === TileSlope.SOUTH_EAST &&
-          direction === Direction.SOUTH_EAST) ||
-        (fromSlope === TileSlope.SOUTH_WEST &&
-          direction === Direction.SOUTH_WEST);
+      const isUpward = isSlopeAndDirectionEqual(fromSlope, direction);
 
-      const isDownward =
-        (fromSlope === TileSlope.NORTH_WEST &&
-          direction === Direction.SOUTH_EAST) ||
-        (fromSlope === TileSlope.NORTH_EAST &&
-          direction === Direction.SOUTH_WEST) ||
-        (fromSlope === TileSlope.SOUTH_EAST &&
-          direction === Direction.NORTH_WEST) ||
-        (fromSlope === TileSlope.SOUTH_WEST &&
-          direction === Direction.NORTH_EAST);
+      const isDownward = isSlopeAndDirectionInverted(fromSlope, direction);
 
       if (fromSlope === TileSlope.ALL) {
         return toCell?.tile === 0 ? toCellBelow?.point : toCell?.point;
       }
-      if (isUpward) return toCell?.point;
-      if (isDownward) return toCellBelow?.point;
+      if (isUpward) {
+        return toCellAbove?.tile === 0 ? toCell?.point : from;
+      }
+      if (isDownward) {
+        return toCellBelow?.tile === 0 ? toCell?.point : from;
+      }
 
       return from;
     }
