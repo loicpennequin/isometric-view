@@ -14,5 +14,8 @@
     "typescript": "^4.6.4",
     "vite": "^3.2.3",
     "vite-plugin-checker": "^0.5.1"
+  },
+  "dependencies": {
+    "mitt": "^3.0.0"
   }
 }

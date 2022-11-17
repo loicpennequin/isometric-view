@@ -34,6 +34,7 @@ const stage = new Stage({
 const player = new Unit({
   position: { x: 7, y: 10, z: 0 },
   stage,
+  camera,
   spriteSheet: {
     ...warriorJson,
     src: warriorUrl

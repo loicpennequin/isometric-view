@@ -1,13 +1,15 @@
 // import { TileSlope } from '@/enums';
 import { Direction, Tileslope, TileSlope } from '@/enums';
 import { Entity } from '@/models/Entity';
-import { Constructor, Point3D } from '@/types';
-import { addVector3D } from '@/utils';
+import { Constructor, Nullable, Point3D } from '@/types';
+import { addVector3D, vectorEquals } from '@/utils';
 
 export const withMovement = <TBase extends Constructor<Entity>>(
   Base: TBase
 ) => {
   return class Movable extends Base {
+    protected lastMovedAt: Nullable<number>;
+
     private isWalkable(cell: any) {
       if (!cell) return false;
       return cell.tile !== 0 && cell.tileMeta?.walkable !== false;
@@ -121,7 +123,14 @@ export const withMovement = <TBase extends Constructor<Entity>>(
 
     move(diff: Point3D) {
       const target = addVector3D(this.position, diff);
-      this.position = this.updatePosition(this.position, target);
+      const newPosition = this.updatePosition(this.position, target);
+
+      if (vectorEquals(this.position, newPosition)) {
+        return;
+      }
+
+      this.transitionTo('walking');
+      this.position = newPosition;
     }
   };
 };

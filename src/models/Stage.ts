@@ -289,8 +289,12 @@ export class Stage {
       )
     );
     const cellCoords = floorVector(this.toCartesian(isoCoords));
+
     this.highlightedCell = this.tileLayers.reduce(
       (acc, layer, i) => {
+        // with an isometric view, a cell that is shifted by 1 in all 3 dimensions will appear on top visually
+        // ie {x:0 , y: 0, z: 0} will appear behind {x:1, y: 1, z: 1} and so on
+        // we wanto highlight the highest possible cell since it's the one hovered by the moue cursor
         const pos = addVector(cellCoords, {
           x: i,
           y: i

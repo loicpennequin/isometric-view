@@ -1,14 +1,11 @@
-import { SpriteAnimationState } from '@/enums';
 import { Entity } from '@/models/Entity';
-import { Constructor, Nullable, SpritesheetTag } from '@/types';
+import { Constructor, Nullable, Point, SpritesheetTag } from '@/types';
 import { ImageLoader } from './withImageLoader';
 
 export const withSprite = <T extends Constructor<Entity> & ImageLoader>(
   Base: T
 ) => {
   return class Sprite extends Base {
-    private animationState: SpriteAnimationState = SpriteAnimationState.IDLE;
-
     private currentFrameIndex = 0;
 
     private animationTimeout: Nullable<ReturnType<typeof setTimeout>>;
@@ -16,29 +13,28 @@ export const withSprite = <T extends Constructor<Entity> & ImageLoader>(
     constructor(...args: any[]) {
       super(...args);
       this.load(this.spriteSheet.src);
+
+      this.emitter.on('*', () => {
+        const tag = this.spriteSheet.meta.frameTags.find(
+          tag => tag.name === this.state
+        );
+        if (!tag) {
+          return;
+        }
+
+        this.currentFrameIndex = tag.from;
+        this.animate();
+      });
     }
 
     private get currentAnimation(): SpritesheetTag {
       return this.spriteSheet.meta.frameTags.find(
-        tag => tag.name === this.animationState
+        tag => tag.name === this.state
       )!;
     }
 
     private get currentFrame() {
       return this.spriteSheet.frames[this.currentFrameIndex];
-    }
-
-    transitionTo(state: SpriteAnimationState) {
-      const tag = this.spriteSheet.meta.frameTags.find(
-        tag => tag.name === state
-      );
-      if (!tag) {
-        console.warn(`Unavailable state for sprite`, state);
-        return;
-      }
-
-      this.animationState = state;
-      this.currentFrameIndex = tag.from;
     }
 
     animate() {
@@ -56,15 +52,11 @@ export const withSprite = <T extends Constructor<Entity> & ImageLoader>(
       next();
     }
 
-    draw(ctx: CanvasRenderingContext2D) {
+    renderSprite(ctx: CanvasRenderingContext2D, { x, y }: Point) {
       ctx.save();
-      const cellInfos = this.stage.getCellInfoByPoint3D(this.position);
-      if (!cellInfos) return;
 
-      const { x, y, h, tileMeta } = cellInfos;
       const xOffset = this.currentFrame.frame.w / 4;
-      const yOffset =
-        this.currentFrame.frame.h / 2 - (tileMeta.slope ? h / 3 : 0);
+      const yOffset = this.currentFrame.frame.h / 2;
 
       ctx.drawImage(
         this.img,
@@ -82,4 +74,4 @@ export const withSprite = <T extends Constructor<Entity> & ImageLoader>(
   };
 };
 
-export type Spritable = ReturnType<typeof withSprite>;
+export type Sprite = ReturnType<typeof withSprite>;

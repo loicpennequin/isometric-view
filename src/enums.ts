@@ -36,8 +36,8 @@ export const EntityOrientation = {
 } as const;
 export type EntityOrientation = Values<typeof EntityOrientation>;
 
-export const SpriteAnimationState = {
+export const EntityState = {
   IDLE: 'idle',
   WALKING: 'walking'
 } as const;
-export type SpriteAnimationState = Values<typeof SpriteAnimationState>;
+export type EntityState = Values<typeof EntityState>;
