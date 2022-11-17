@@ -1,4 +1,5 @@
 import { StageLayerType } from '@/enums';
+import { Camera } from '@/models/Camera';
 import { TileSet } from '@/models/TileSet';
 import { StageMeta, StageLayerMeta, Point, Point3D, Rectangle } from '@/types';
 import {
@@ -13,7 +14,6 @@ import {
   rotateMatrix,
   subVector
 } from '@/utils';
-import { Camera } from './createCamera';
 
 export type CreateStageOptions = {
   ctx: CanvasRenderingContext2D;

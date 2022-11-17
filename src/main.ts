@@ -7,19 +7,19 @@ import mapJSON from './assets/maps/test-map.json';
 import { createCanvas } from './factories/createCanvas';
 import { createMouseTracker } from './factories/createMouseTracker';
 import { createStage } from './factories/createStage';
-import { createCamera } from './factories/createCamera';
-import { createControls } from './factories/createControls';
 import { StageMeta } from './types';
 import { vectorEquals3D } from './utils';
 import { Unit } from './models/Unit';
 import { TileSet } from './models/TileSet';
+import { Camera } from './models/Camera';
+import { PlayerControls } from './models/PlayerControls';
 
 const { canvas, ctx } = createCanvas({
   w: window.innerWidth,
   h: window.innerHeight
 });
 const tileset = new TileSet({ src: tilesetUrl, meta: tilesetJSON });
-const camera = createCamera({
+const camera = new Camera({
   x: window.innerWidth / 2,
   y: 250,
   angle: 0
@@ -64,7 +64,10 @@ function draw() {
 document.getElementById('app')?.appendChild(canvas);
 
 Promise.all([player.ready, tileset.ready]).then(() => {
-  createControls({ canvas, camera, mousePosition, player });
+  new PlayerControls({ canvas, camera, mousePosition, player })
+    .enableCamera()
+    .enablePlayerMovement();
+
   player.animate();
 
   draw();
