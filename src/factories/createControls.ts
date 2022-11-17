@@ -3,6 +3,7 @@ import {
   CAMERA_MIN_SCALE,
   CAMERA_ROTATE_SCALE
 } from '@/constants';
+import { Unit } from '@/models/Unit';
 import { Point } from '@/types';
 import {
   addVector,
@@ -13,13 +14,12 @@ import {
   subVector
 } from '@/utils';
 import { Camera } from './createCamera';
-import { Entity } from './createEntity';
 
 export type CreateControlsOptions = {
   canvas: HTMLCanvasElement;
   camera: Camera;
   mousePosition: Point;
-  player: Entity;
+  player: Unit;
 };
 
 export const createControls = ({
@@ -81,19 +81,19 @@ export const createControls = ({
 
   const handleKeyboard = (e: KeyboardEvent) => {
     switch (e.code) {
-      case 'ArrowUp':
+      case 'KeyW':
         controls.x--;
         controls.y--;
         break;
-      case 'ArrowDown':
+      case 'KeyS':
         controls.x++;
         controls.y++;
         break;
-      case 'ArrowLeft':
+      case 'KeyA':
         controls.x--;
         controls.y++;
         break;
-      case 'ArrowRight':
+      case 'KeyD':
         controls.y--;
         controls.x++;
         break;

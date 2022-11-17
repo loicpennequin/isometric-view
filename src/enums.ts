@@ -29,3 +29,15 @@ export const Direction = {
   NORTH_WEST: 'nw'
 };
 export type Direction = Values<typeof Direction>;
+
+export const EntityOrientation = {
+  LEFT: 'LEFT',
+  RIGHT: 'RIGHT'
+} as const;
+export type EntityOrientation = Values<typeof EntityOrientation>;
+
+export const SpriteAnimationState = {
+  IDLE: 'idle',
+  WALKING: 'walking'
+} as const;
+export type SpriteAnimationState = Values<typeof SpriteAnimationState>;

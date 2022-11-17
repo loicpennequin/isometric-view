@@ -1,4 +1,5 @@
 import {
+  AnyConstructor,
   Boundaries,
   Circle,
   Dimensions,
@@ -205,3 +206,15 @@ export const memoize = <TArgs extends any[], TReturn>(
     return val;
   };
 };
+
+export const pipeBuilder = <A, B>(fn: (a: A) => B) => {
+  return {
+    add: <C>(g: (x: B) => C) => pipeBuilder((arg: A) => g(fn(arg))),
+    build: (a?: A) => fn(a as A)
+  };
+};
+
+export const mixinBuilder = <TBase extends AnyConstructor>(BaseClass: TBase) =>
+  pipeBuilder(() => BaseClass);
+
+export class EmptyClass {}

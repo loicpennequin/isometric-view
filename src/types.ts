@@ -11,6 +11,8 @@ export type Range = Boundaries<number>;
 export type Nullable<T> = T | null | undefined;
 export type AnyRecord = Record<string, any>;
 export type Values<T> = T[keyof T];
+export type Constructor<T = {}> = new (...args: any[]) => T;
+export type AnyConstructor = new (...args: any[]) => {};
 export interface TileSetMeta {
   columns: number;
   image: string;
@@ -83,4 +85,42 @@ export interface StageLayerObjectsMeta {
   x: number;
   y: number;
   properties?: MetaCustomProperty[];
+}
+
+export interface Spritesheet {
+  src: string;
+  frames: SpritesheetFrame[];
+  meta: SpritesheetMeta;
+}
+
+export interface SpritesheetFrame {
+  filename: string;
+  frame: Rectangle;
+  rotated: boolean;
+  trimmed: boolean;
+  spriteSourceSize: Rectangle;
+  sourceSize: Size;
+  duration: number;
+}
+
+export interface Size {
+  w: number;
+  h: number;
+}
+
+export interface SpritesheetMeta {
+  app: string;
+  version: string;
+  image: string;
+  format: string;
+  size: Size;
+  scale: string;
+  frameTags: SpritesheetTag[];
+}
+
+export interface SpritesheetTag {
+  name: string;
+  from: number;
+  to: number;
+  direction: string;
 }

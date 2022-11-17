@@ -27,13 +27,19 @@ export type Stage = ReturnType<typeof createStage>;
 export type CellInfos = Rectangle & {
   isHighlighted: boolean;
   point: Point3D;
+  originalPoint: Point3D;
   tile: number;
-  index: number;
 };
 
 type DrawLayersOptions = {
   drawCell: (opts: CellInfos) => void;
   debug?: boolean;
+};
+
+type DepthSortedCell = {
+  point: Point3D;
+  originalPoint: Point3D;
+  tile: number;
 };
 
 export const createStage = ({
@@ -51,27 +57,27 @@ export const createStage = ({
     layer => layer.type === StageLayerType.TILES
   );
 
-  const objectsMeta = Object.freeze(
-    meta.layers
-      .filter(layer => layer.type === StageLayerType.OBJECTS)
-      .map(layer =>
-        Object.fromEntries(
-          layer.objects!.map(obj => [
-            obj.name,
-            {
-              ...obj,
-              properties: Object.fromEntries(
-                (obj.properties ?? []).map(prop => [prop.name, prop.value])
-              )
-            }
-          ])
-        )
-      )
-      .flat()
-      .reduce(Object.assign)
-  );
+  // const objectsMeta = Object.freeze(
+  //   meta.layers
+  //     .filter(layer => layer.type === StageLayerType.OBJECTS)
+  //     .map(layer =>
+  //       Object.fromEntries(
+  //         layer.objects!.map(obj => [
+  //           obj.name,
+  //           {
+  //             ...obj,
+  //             properties: Object.fromEntries(
+  //               (obj.properties ?? []).map(prop => [prop.name, prop.value])
+  //             )
+  //           }
+  //         ])
+  //       )
+  //     )
+  //     .flat()
+  //     .reduce(Object.assign)
+  // );
 
-  const getObject = (key: string) => objectsMeta[key];
+  // const getObject = (key: string) => objectsMeta[key];
 
   const getLayerOffset = (layer: StageLayerMeta, debug?: boolean): Point =>
     addVector(
@@ -87,14 +93,6 @@ export const createStage = ({
 
     return rotateMatrix<number>(matrix, camera.view.angle).flat();
   };
-
-  // const getCellCoordsByIndex = (
-  //   layer: StageLayerMeta,
-  //   index: number
-  // ): Point => ({
-  //   x: index % layer.width,
-  //   y: Math.floor(index / layer.height)
-  // });
 
   const toIsometric = ({ x, y }: Point) =>
     mulVector(cartesianToIsometric({ x, y }), halfSize);
@@ -113,24 +111,35 @@ export const createStage = ({
     index ===
       highlightedCell.y * tileLayers[layerIndex].width + highlightedCell.x;
 
-  const getDepthSortedData = memoize((angle: number) => {
-    console.log(angle);
-    const rotatedLayers = tileLayers.map(layer => {
+  const getRotatedLayers = (angle: number) => {
+    return tileLayers.map((layer, index) => {
       const matrix = createMatrix(
         { w: meta.width, h: meta.height },
-        ({ x, y }) => layer.data[x * meta.height + y]
+        ({ x, y }) => ({
+          tile: layer.data[x * meta.height + y],
+          originalPoint: {
+            x: y,
+            y: x % meta.height,
+            z: index
+          }
+        })
       );
 
-      return rotateMatrix<number>(matrix, angle).flat();
+      return rotateMatrix<{ originalPoint: Point3D; tile: number }>(
+        matrix,
+        angle
+      ).flat();
     });
+  };
 
-    const sorted: { point: Point3D; tile: number }[] = [];
+  const getDepthSortedData = memoize((angle: number) => {
+    const rotatedLayers = getRotatedLayers(angle);
+    const sorted: DepthSortedCell[] = [];
+
     rotatedLayers.forEach((layer, layerIndex) => {
-      layer.forEach((tile, cellIndex) => {
+      layer.forEach(({ tile, originalPoint }, cellIndex) => {
         const i = cellIndex * rotatedLayers.length + layerIndex;
-        // console.log(
-        //   `putting cell ${cellIndex} of layer ${layerIndex} at index ${i}`
-        // );
+
         const point = {
           x: cellIndex % meta.width,
           y: Math.floor(cellIndex / meta.height),
@@ -138,7 +147,8 @@ export const createStage = ({
         };
         sorted[i] = {
           tile,
-          point
+          point,
+          originalPoint
         };
       });
     });
@@ -147,20 +157,23 @@ export const createStage = ({
   });
 
   const drawLayers = ({ drawCell, debug = false }: DrawLayersOptions) => {
-    getDepthSortedData(camera.view.angle).forEach(({ point, tile }, index) => {
-      const z = index % tileLayers.length;
-      if (debug && z > 0) return;
-      const layer = tileLayers[z];
-      const layerCellIndex = Math.floor(index / tileLayers.length);
-      const isHighlighted = isCellHighlighted(z, layerCellIndex);
-      const { w, h } = tileSet.getTileCoords(tile);
+    getDepthSortedData(camera.view.angle).forEach(
+      ({ originalPoint, point, tile }, index) => {
+        const z = index % tileLayers.length;
+        if (debug && z > 0) return;
+        const layer = tileLayers[z];
+        const layerCellIndex = Math.floor(index / tileLayers.length);
+        const isHighlighted = isCellHighlighted(z, layerCellIndex);
+        const { w, h } = tileSet.getTileCoords(tile);
 
-      const { x, y } = addVector(
-        toIsometric(point),
-        getLayerOffset(layer, debug)
-      );
-      drawCell({ tile, index, isHighlighted, point, x, y, w, h });
-    });
+        const { x, y } = addVector(
+          toIsometric(point),
+          getLayerOffset(layer, debug)
+        );
+
+        drawCell({ tile, isHighlighted, point, originalPoint, x, y, w, h });
+      }
+    );
   };
 
   const drawDebug = () => {
@@ -199,7 +212,11 @@ export const createStage = ({
       drawCell(cell) {
         const { tile, isHighlighted, x, y } = cell;
         ctx.save();
-        if (isHighlighted) ctx.filter = 'brightness(200%)';
+        if (isHighlighted) {
+          ctx.filter = 'brightness(200%)';
+          // ctx.fillStyle = 'rgba(255,255,255,0.5)';
+          // ctx.fillRect(x, y, w, h);
+        }
         tileSet.draw(tile, { x, y }, camera.view.angle);
         ctx.restore();
         cb(cell);
@@ -250,18 +267,7 @@ export const createStage = ({
     );
     const tileMeta = tileSet.tileMeta[tile] ?? {};
 
-    return {
-      tile,
-      tileMeta,
-      index,
-      point,
-      rotatedPoint,
-      isHighlighted,
-      x,
-      y,
-      w,
-      h
-    };
+    return { tile, tileMeta, point, isHighlighted, x, y, w, h };
   };
 
   const updateHighlightedCell = (point: Point) => {
@@ -278,12 +284,7 @@ export const createStage = ({
           x: i,
           y: i
         });
-        const isOutOfBounds =
-          pos.x < 0 ||
-          pos.x > layer.width - 1 ||
-          pos.y < 0 ||
-          pos.y > layer.height - 1;
-
+        const isOutOfBounds = isWithinBounds({ ...point, z: i });
         if (isOutOfBounds) return acc;
 
         const cellIndex = pos.y * layer.width + pos.x;
@@ -299,7 +300,7 @@ export const createStage = ({
   };
 
   return {
-    getObject,
+    // getObject,
     drawDebug,
     draw,
     updateHighlightedCell,
