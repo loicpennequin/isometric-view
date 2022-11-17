@@ -6,13 +6,13 @@ import warriorJson from './assets/units/warrior.json';
 import mapJSON from './assets/maps/test-map.json';
 import { createCanvas } from './factories/createCanvas';
 import { createMouseTracker } from './factories/createMouseTracker';
-import { createStage } from './factories/createStage';
 import { StageMeta } from './types';
 import { vectorEquals3D } from './utils';
 import { Unit } from './models/Unit';
 import { TileSet } from './models/TileSet';
 import { Camera } from './models/Camera';
 import { PlayerControls } from './models/PlayerControls';
+import { Stage } from './models/Stage';
 
 const { canvas, ctx } = createCanvas({
   w: window.innerWidth,
@@ -25,8 +25,7 @@ const camera = new Camera({
   angle: 0
 });
 const mousePosition = createMouseTracker(canvas);
-const stage = createStage({
-  ctx,
+const stage = new Stage({
   camera,
   meta: mapJSON as StageMeta,
   tileSet: tileset
@@ -50,12 +49,12 @@ function draw() {
   camera.apply(ctx);
 
   stage.updateHighlightedCell(mousePosition);
-  stage.draw(cell => {
+  stage.draw(ctx, cell => {
     if (vectorEquals3D(player.position, cell.originalPoint)) {
       player.draw(ctx);
     }
   });
-  // stage.drawDebug();
+  // stage.drawDebug(ctx);
   ctx.restore();
 
   return requestAnimationFrame(draw);

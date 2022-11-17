@@ -1,5 +1,5 @@
 import { EntityOrientation } from '@/enums';
-import { Stage } from '@/factories/createStage';
+import { Stage } from './Stage';
 import { Point3D, Spritesheet } from '@/types';
 
 export type CreateEntityOptions = {
