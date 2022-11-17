@@ -13,8 +13,9 @@ export class Unit extends mixins.build() {
   draw(ctx: CanvasRenderingContext2D) {
     const cellInfos = this.stage.getCellInfoByPoint3D(this.position);
     if (!cellInfos) return;
+    const { h, tileMeta } = cellInfos;
+    const { x, y } = this.interpolatedCoords;
 
-    const { x, y, h, tileMeta } = cellInfos;
     this.renderSprite(ctx, { x, y: y + (tileMeta.slope ? h / 3 : 0) });
   }
 }

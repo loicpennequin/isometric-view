@@ -1,14 +1,16 @@
 // import { TileSlope } from '@/enums';
+import { ENTITY_MOVEMENT_DURATION } from '@/constants';
 import { Direction, Tileslope, TileSlope } from '@/enums';
 import { Entity } from '@/models/Entity';
-import { Constructor, Nullable, Point3D } from '@/types';
-import { addVector3D, vectorEquals } from '@/utils';
+import { Constructor, Point3D } from '@/types';
+import { addVector3D, lerpVector, vectorEquals } from '@/utils';
 
 export const withMovement = <TBase extends Constructor<Entity>>(
   Base: TBase
 ) => {
   return class Movable extends Base {
-    protected lastMovedAt: Nullable<number>;
+    protected lastMovedAt = 0;
+    prevPosition: Point3D = { x: -9999, y: -9999, z: -9999 };
 
     private isWalkable(cell: any) {
       if (!cell) return false;
@@ -121,6 +123,33 @@ export const withMovement = <TBase extends Constructor<Entity>>(
       return to;
     }
 
+    protected get interpolatedCoords() {
+      const cellInfos = this.stage.getCellInfoByPoint3D(this.position);
+      const prevCellInfos = this.stage.getCellInfoByPoint3D(this.prevPosition);
+      if (!cellInfos) {
+        throw new Error('Out of bond cell when interpolating position');
+      }
+
+      if (!prevCellInfos) return cellInfos;
+
+      const now = performance.now();
+      const elapsed = now - this.lastMovedAt;
+
+      if (elapsed > ENTITY_MOVEMENT_DURATION) {
+        this.lastMovedAt = 0;
+        this.transitionTo('idle');
+        return cellInfos;
+      }
+
+      const coords = lerpVector(
+        prevCellInfos,
+        cellInfos,
+        elapsed / ENTITY_MOVEMENT_DURATION
+      );
+
+      return coords;
+    }
+
     move(diff: Point3D) {
       const target = addVector3D(this.position, diff);
       const newPosition = this.updatePosition(this.position, target);
@@ -130,6 +159,8 @@ export const withMovement = <TBase extends Constructor<Entity>>(
       }
 
       this.transitionTo('walking');
+      this.lastMovedAt = performance.now();
+      this.prevPosition = this.position;
       this.position = newPosition;
     }
   };

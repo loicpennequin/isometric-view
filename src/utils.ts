@@ -218,3 +218,15 @@ export const mixinBuilder = <TBase extends AnyConstructor>(BaseClass: TBase) =>
   pipeBuilder(() => BaseClass);
 
 export class EmptyClass {}
+
+export const smootherStep = (x: number) =>
+  6 * x ** 5 - 15 * x ** 4 + 10 * x ** 3;
+
+export const lerp = (amount: number, { min, max }: Range) => {
+  return min + smootherStep(amount) * (max - min);
+};
+
+export const lerpVector = (from: Point, to: Point, amount: number): Point => ({
+  x: lerp(amount, { min: from.x, max: to.x }),
+  y: lerp(amount, { min: from.y, max: to.y })
+});
