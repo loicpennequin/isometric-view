@@ -1,18 +1,23 @@
 import { StageLayerType } from '@/enums';
 import { Camera } from '@/models/Camera';
 import { TileSet } from '@/models/TileSet';
-import { StageMeta, StageLayerMeta, Point, Point3D, Rectangle } from '@/types';
+import {
+  StageMeta,
+  StageLayerMeta,
+  Point,
+  Point3D,
+  Rectangle,
+  Matrix
+} from '@/types';
 import {
   addVector,
   cartesianToIsometric,
   createMatrix,
   diamond,
   divVector,
-  floorVector,
   memoize,
   mulVector,
-  rotateMatrix,
-  subVector
+  rotateMatrix
 } from '@/utils';
 
 export type CreateStageOptions = {
@@ -57,7 +62,7 @@ export class Stage {
 
   constructor(opts: StageOptions) {
     Object.assign(this, opts);
-    this.getDepthSortedData = memoize(this.getDepthSortedData.bind(this));
+    this.getDepthSortedLayers = memoize(this.getDepthSortedLayers.bind(this));
   }
 
   private get size(): Point {
@@ -98,15 +103,15 @@ export class Stage {
     return mulVector(cartesianToIsometric({ x, y }), this.halfSize);
   }
 
-  private toCartesian({ x, y }: Point) {
-    return divVector(
-      {
-        x: x / this.halfSize.x + y / this.halfSize.y,
-        y: y / this.halfSize.y - x / this.halfSize.x
-      },
-      2
-    );
-  }
+  // private toCartesian({ x, y }: Point) {
+  //   return divVector(
+  //     {
+  //       x: x / this.halfSize.x + y / this.halfSize.y,
+  //       y: y / this.halfSize.y - x / this.halfSize.x
+  //     },
+  //     2
+  //   );
+  // }
 
   private isCellHighlighted(layerIndex: number, index: number) {
     return (
@@ -138,34 +143,28 @@ export class Stage {
     });
   }
 
-  private getDepthSortedData(angle: number) {
+  private getDepthSortedLayers(angle: number): Matrix<DepthSortedCell> {
     const rotatedLayers = this.getRotatedLayers(angle);
-    const sorted: DepthSortedCell[] = [];
 
-    rotatedLayers.forEach((layer, layerIndex) => {
-      layer.forEach(({ tile, originalPoint }, cellIndex) => {
-        const i = cellIndex * rotatedLayers.length + layerIndex;
-
+    return rotatedLayers.map((layer, layerIndex) => {
+      return layer.map(({ tile, originalPoint }, cellIndex) => {
         const point = {
           x: cellIndex % this.meta.width,
           y: Math.floor(cellIndex / this.meta.height),
           z: layerIndex
         };
-        sorted[i] = {
+        return {
           tile,
           point,
           originalPoint
         };
       });
     });
-
-    return sorted;
   }
 
   private drawLayers({ drawCell, debug = false }: DrawLayersOptions) {
-    this.getDepthSortedData(this.camera.view.angle).forEach(
-      ({ originalPoint, point, tile }, index) => {
-        const z = index % this.tileLayers.length;
+    this.getDepthSortedLayers(this.camera.view.angle).forEach((layer, z) => {
+      layer.forEach(({ originalPoint, point, tile }, index) => {
         if (debug && z > 0) return;
         const layer = this.tileLayers[z];
         const layerCellIndex = Math.floor(index / this.tileLayers.length);
@@ -178,8 +177,8 @@ export class Stage {
         );
 
         drawCell({ tile, isHighlighted, point, originalPoint, x, y, w, h });
-      }
-    );
+      });
+    });
   }
 
   private getRotatedPoint(point: Point3D) {
@@ -282,35 +281,36 @@ export class Stage {
   }
 
   updateHighlightedCell(point: Point) {
-    const isoCoords = floorVector(
-      divVector(
-        subVector(point, addVector(this.camera.view, this.stageOffset)),
-        this.camera.view.scale
-      )
-    );
-    const cellCoords = floorVector(this.toCartesian(isoCoords));
+    point;
+    // const isoCoords = floorVector(
+    //   divVector(
+    //     subVector(point, addVector(this.camera.view, this.stageOffset)),
+    //     this.camera.view.scale
+    //   )
+    // );
+    // const cellCoords = floorVector(this.toCartesian(isoCoords));
 
-    this.highlightedCell = this.tileLayers.reduce(
-      (acc, layer, i) => {
-        // with an isometric view, a cell that is shifted by 1 in all 3 dimensions will appear on top visually
-        // ie {x:0 , y: 0, z: 0} will appear behind {x:1, y: 1, z: 1} and so on
-        // we wanto highlight the highest possible cell since it's the one hovered by the moue cursor
-        const pos = addVector(cellCoords, {
-          x: i,
-          y: i
-        });
-        const isOutOfBounds = this.isWithinBounds({ ...point, z: i });
-        if (isOutOfBounds) return acc;
+    // this.highlightedCell = this.tileLayers.reduce(
+    //   (acc, layer, i) => {
+    //     // with an isometric view, a cell that is shifted by 1 in all 3 dimensions will appear on top visually
+    //     // ie {x:0 , y: 0, z: 0} will appear behind {x:1, y: 1, z: 1} and so on
+    //     // we wanto highlight the highest possible cell since it's the one hovered by the moue cursor
+    //     const pos = addVector(cellCoords, {
+    //       x: i,
+    //       y: i
+    //     });
+    //     const isOutOfBounds = this.isWithinBounds({ ...point, z: i });
+    //     if (isOutOfBounds) return acc;
 
-        const cellIndex = pos.y * layer.width + pos.x;
-        const cellAtLayer = this.getLayerData(layer)[cellIndex];
-        const hasSpaceAbove = this.tileLayers[i + 1]
-          ? this.getLayerData(this.tileLayers[i + 1])[cellIndex] === 0
-          : true;
+    //     const cellIndex = pos.y * layer.width + pos.x;
+    //     const cellAtLayer = this.getLayerData(layer)[cellIndex];
+    //     const hasSpaceAbove = this.tileLayers[i + 1]
+    //       ? this.getLayerData(this.tileLayers[i + 1])[cellIndex] === 0
+    //       : true;
 
-        return cellAtLayer && hasSpaceAbove ? { ...pos, z: i } : acc;
-      },
-      { x: -1, y: -1, z: -1 }
-    );
+    //     return cellAtLayer && hasSpaceAbove ? { ...pos, z: i } : acc;
+    //   },
+    //   { x: -1, y: -1, z: -1 }
+    // );
   }
 }
