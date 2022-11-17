@@ -1,10 +1,10 @@
 // import { TileSlope } from '@/enums';
 import { Direction, Tileslope, TileSlope } from '@/enums';
-import { Sprite } from '@/models/Sprite';
+import { Entity } from '@/models/Entity';
 import { Constructor, Point3D } from '@/types';
 import { addVector3D } from '@/utils';
 
-export const withMovement = <TBase extends Constructor<Sprite>>(
+export const withMovement = <TBase extends Constructor<Entity>>(
   Base: TBase
 ) => {
   return class Movable extends Base {

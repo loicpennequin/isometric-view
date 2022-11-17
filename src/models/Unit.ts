@@ -1,7 +1,8 @@
 import { withMovement } from '@/mixins/withMovement';
+import { withSprite } from '@/mixins/withSprite';
 import { mixinBuilder } from '@/utils';
-import { Sprite } from './Sprite';
+import { Entity } from './Entity';
 
-const mixins = mixinBuilder(Sprite).add(withMovement);
+const mixins = mixinBuilder(Entity).add(withSprite).add(withMovement);
 
 export class Unit extends mixins.build() {}
