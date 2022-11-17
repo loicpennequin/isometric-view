@@ -1,8 +1,11 @@
 import { SpriteAnimationState } from '@/enums';
 import { Entity } from '@/models/Entity';
 import { Constructor, Nullable, SpritesheetTag } from '@/types';
+import { ImageLoader } from './withImageLoader';
 
-export const withSprite = <T extends Constructor<Entity>>(Base: T) => {
+export const withSprite = <T extends Constructor<Entity> & ImageLoader>(
+  Base: T
+) => {
   return class Sprite extends Base {
     private animationState: SpriteAnimationState = SpriteAnimationState.IDLE;
 
@@ -10,22 +13,9 @@ export const withSprite = <T extends Constructor<Entity>>(Base: T) => {
 
     private animationTimeout: Nullable<ReturnType<typeof setTimeout>>;
 
-    private img!: HTMLImageElement;
-
-    public ready!: Promise<void>;
-
     constructor(...args: any[]) {
       super(...args);
-      this.load();
-    }
-
-    private load() {
-      this.img = Object.assign(new Image(), { src: this.spriteSheet.src });
-      this.ready = new Promise<void>(resolve => {
-        this.img.addEventListener('load', () => {
-          resolve();
-        });
-      });
+      this.load(this.spriteSheet.src);
     }
 
     private get currentAnimation(): SpritesheetTag {

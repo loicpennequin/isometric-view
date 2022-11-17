@@ -1,5 +1,5 @@
 import { StageLayerType } from '@/enums';
-import { TileSet } from '@/factories/createTileSet';
+import { TileSet } from '@/models/TileSet';
 import { StageMeta, StageLayerMeta, Point, Point3D, Rectangle } from '@/types';
 import {
   addVector,
@@ -56,28 +56,6 @@ export const createStage = ({
   const tileLayers = meta.layers.filter(
     layer => layer.type === StageLayerType.TILES
   );
-
-  // const objectsMeta = Object.freeze(
-  //   meta.layers
-  //     .filter(layer => layer.type === StageLayerType.OBJECTS)
-  //     .map(layer =>
-  //       Object.fromEntries(
-  //         layer.objects!.map(obj => [
-  //           obj.name,
-  //           {
-  //             ...obj,
-  //             properties: Object.fromEntries(
-  //               (obj.properties ?? []).map(prop => [prop.name, prop.value])
-  //             )
-  //           }
-  //         ])
-  //       )
-  //     )
-  //     .flat()
-  //     .reduce(Object.assign)
-  // );
-
-  // const getObject = (key: string) => objectsMeta[key];
 
   const getLayerOffset = (layer: StageLayerMeta, debug?: boolean): Point =>
     addVector(
@@ -217,7 +195,7 @@ export const createStage = ({
           // ctx.fillStyle = 'rgba(255,255,255,0.5)';
           // ctx.fillRect(x, y, w, h);
         }
-        tileSet.draw(tile, { x, y }, camera.view.angle);
+        tileSet.draw(ctx, { tile, coords: { x, y }, angle: camera.view.angle });
         ctx.restore();
         cb(cell);
       }
