@@ -4,4 +4,4 @@ export const CAMERA_ROTATE_SCALE = 90;
 
 export const ENTITY_FRAME_DURATION = 200;
 
-export const ENTITY_MOVEMENT_DURATION = 300;
+export const ENTITY_MOVEMENT_DURATION = 500;

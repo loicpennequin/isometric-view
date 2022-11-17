@@ -16,6 +16,6 @@ export class Unit extends mixins.build() {
     const { h, tileMeta } = cellInfos;
     const { x, y } = this.interpolatedCoords;
 
-    this.renderSprite(ctx, { x, y: y + (tileMeta.slope ? h / 3 : 0) });
+    this.renderSprite(ctx, { x, y: y + (tileMeta.slope ? h / 4 : 0) });
   }
 }

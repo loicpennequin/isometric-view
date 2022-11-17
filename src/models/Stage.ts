@@ -1,21 +1,12 @@
 import { StageLayerType } from '@/enums';
 import { Camera } from '@/models/Camera';
-import { TileSet } from '@/models/TileSet';
-import {
-  StageMeta,
-  StageLayerMeta,
-  Point,
-  Point3D,
-  Rectangle,
-  Matrix
-} from '@/types';
+import { TileMeta, TileSet } from '@/models/TileSet';
+import { StageMeta, StageLayerMeta, Point, Point3D, Rectangle } from '@/types';
 import {
   addVector,
   cartesianToIsometric,
   createMatrix,
-  diamond,
   divVector,
-  memoize,
   mulVector,
   rotateMatrix
 } from '@/utils';
@@ -28,21 +19,10 @@ export type CreateStageOptions = {
 };
 
 export type CellInfos = Rectangle & {
-  isHighlighted: boolean;
   point: Point3D;
   originalPoint: Point3D;
   tile: number;
-};
-
-type DrawLayersOptions = {
-  drawCell: (opts: CellInfos) => void;
-  debug?: boolean;
-};
-
-type DepthSortedCell = {
-  point: Point3D;
-  originalPoint: Point3D;
-  tile: number;
+  tileMeta: TileMeta;
 };
 
 export type StageOptions = {
@@ -56,13 +36,10 @@ export class Stage {
 
   private camera!: Camera;
 
-  private highlightedCell: Point3D = { x: -1, y: -1, z: -1 };
-
   tileSet!: TileSet;
 
   constructor(opts: StageOptions) {
     Object.assign(this, opts);
-    this.getDepthSortedLayers = memoize(this.getDepthSortedLayers.bind(this));
   }
 
   private get size(): Point {
@@ -83,102 +60,48 @@ export class Stage {
     );
   }
 
-  private getLayerOffset(layer: StageLayerMeta, debug?: boolean): Point {
+  private getLayerOffset(layer: StageLayerMeta): Point {
     return addVector(
       { x: layer.offsetx ?? 0, y: layer.offsety ?? 0 },
-      debug ? { x: 0, y: 0 } : this.stageOffset
+      this.stageOffset
     );
   }
 
-  private getLayerData(layer: StageLayerMeta) {
+  private rotateLayer(layerIndex: number) {
+    const layer = this.tileLayers[layerIndex];
+
     const matrix = createMatrix(
       { w: this.meta.width, h: this.meta.height },
-      ({ x, y }) => layer.data[x * this.meta.height + y]
+      ({ x, y }) => {
+        const tile = layer.data[x * this.meta.height + y];
+
+        return {
+          tile,
+          tileMeta: this.tileSet.tileMeta[tile],
+          originalPoint: {
+            x: y,
+            y: x % this.meta.height,
+            z: layerIndex
+          }
+        };
+      }
     );
 
-    return rotateMatrix<number>(matrix, this.camera.view.angle).flat();
+    return rotateMatrix<{
+      originalPoint: Point3D;
+      tileMeta: TileMeta;
+      tile: number;
+    }>(matrix, this.camera.view.angle);
   }
 
   private toIsometric({ x, y }: Point) {
     return mulVector(cartesianToIsometric({ x, y }), this.halfSize);
   }
 
-  // private toCartesian({ x, y }: Point) {
-  //   return divVector(
-  //     {
-  //       x: x / this.halfSize.x + y / this.halfSize.y,
-  //       y: y / this.halfSize.y - x / this.halfSize.x
-  //     },
-  //     2
-  //   );
-  // }
+  private isWithinBounds({ x, y, z }: Point3D) {
+    const layer = this.tileLayers[z];
 
-  private isCellHighlighted(layerIndex: number, index: number) {
-    return (
-      layerIndex == this.highlightedCell.z &&
-      index ===
-        this.highlightedCell.y * this.tileLayers[layerIndex].width +
-          this.highlightedCell.x
-    );
-  }
-
-  private getRotatedLayers(angle: number) {
-    return this.tileLayers.map((layer, index) => {
-      const matrix = createMatrix(
-        { w: this.meta.width, h: this.meta.height },
-        ({ x, y }) => ({
-          tile: layer.data[x * this.meta.height + y],
-          originalPoint: {
-            x: y,
-            y: x % this.meta.height,
-            z: index
-          }
-        })
-      );
-
-      return rotateMatrix<{ originalPoint: Point3D; tile: number }>(
-        matrix,
-        angle
-      ).flat();
-    });
-  }
-
-  private getDepthSortedLayers(angle: number): Matrix<DepthSortedCell> {
-    const rotatedLayers = this.getRotatedLayers(angle);
-
-    return rotatedLayers.map((layer, layerIndex) => {
-      return layer.map(({ tile, originalPoint }, cellIndex) => {
-        const point = {
-          x: cellIndex % this.meta.width,
-          y: Math.floor(cellIndex / this.meta.height),
-          z: layerIndex
-        };
-        return {
-          tile,
-          point,
-          originalPoint
-        };
-      });
-    });
-  }
-
-  private drawLayers({ drawCell, debug = false }: DrawLayersOptions) {
-    this.getDepthSortedLayers(this.camera.view.angle).forEach((layer, z) => {
-      layer.forEach(({ originalPoint, point, tile }, index) => {
-        if (debug && z > 0) return;
-        const layer = this.tileLayers[z];
-        const layerCellIndex = Math.floor(index / this.tileLayers.length);
-        const isHighlighted = this.isCellHighlighted(z, layerCellIndex);
-        const { w, h } = this.tileSet.getTileCoords(tile);
-
-        const { x, y } = addVector(
-          this.toIsometric(point),
-          this.getLayerOffset(layer, debug)
-        );
-
-        drawCell({ tile, isHighlighted, point, originalPoint, x, y, w, h });
-      });
-    });
+    return layer && x >= 0 && y >= 0 && x < layer.width && y < layer.height;
   }
 
   private getRotatedPoint(point: Point3D) {
@@ -201,10 +124,31 @@ export class Stage {
     return rotatedPoint;
   }
 
-  private isWithinBounds({ x, y, z }: Point3D) {
-    const layer = this.tileLayers[z];
+  draw(ctx: CanvasRenderingContext2D, cb: (cell: CellInfos) => void) {
+    this.tileLayers.forEach((layer, layerIndex) => {
+      const cells = this.rotateLayer(layerIndex);
+      cells.forEach((row, rowIndex) => {
+        row.forEach((cell, cellIndex) => {
+          const point = { x: cellIndex, y: rowIndex, z: layerIndex };
+          const { w, h } = this.tileSet.getTileCoords(cell.tile);
 
-    return layer && x >= 0 && y >= 0 && x < layer.width && y < layer.height;
+          const { x, y } = addVector(
+            this.toIsometric(point),
+            this.getLayerOffset(layer)
+          );
+
+          ctx.save();
+          this.tileSet.draw(ctx, {
+            tile: cell.tile,
+            coords: { x, y },
+            angle: this.camera.view.angle
+          });
+          ctx.restore();
+
+          cb({ ...cell, x, y, w, h, point });
+        });
+      });
+    });
   }
 
   getCellInfoByPoint3D(point: Point3D) {
@@ -214,10 +158,8 @@ export class Stage {
 
     const rotatedPoint = this.getRotatedPoint(point);
     const layer = this.tileLayers[rotatedPoint.z];
-    const layerData = this.getLayerData(layer);
-    const index = rotatedPoint.y * layer.width + rotatedPoint.x;
-    const tile = layerData[index];
-    const isHighlighted = this.isCellHighlighted(rotatedPoint.z, index);
+    const layerData = this.rotateLayer(point.z);
+    const { originalPoint, tile } = layerData[point.y][point.x];
     const { w, h } = this.tileSet.getTileCoords(tile);
     const { x, y } = addVector(
       this.toIsometric(rotatedPoint),
@@ -225,92 +167,6 @@ export class Stage {
     );
     const tileMeta = this.tileSet.tileMeta[tile] ?? {};
 
-    return { tile, tileMeta, point, isHighlighted, x, y, w, h };
-  }
-
-  drawDebug(ctx: CanvasRenderingContext2D) {
-    this.drawLayers({
-      debug: true,
-      drawCell: ({ point, x, y, w, h }) => {
-        diamond(ctx, {
-          x,
-          y: y + this.meta.tileheight,
-          w: this.meta.tilewidth,
-          h: this.meta.tileheight
-        });
-        ctx.strokeStyle = 'blue';
-        ctx.stroke();
-        diamond(ctx, {
-          x,
-          y: y,
-          w: this.meta.tilewidth,
-          h: this.meta.tileheight
-        });
-        ctx.stroke();
-        ctx.fillStyle = 'white';
-
-        ctx.strokeStyle = 'red';
-        ctx.strokeRect(x - this.meta.tilewidth / 2, y, w, h);
-
-        ctx.textBaseline = 'top';
-        ctx.font = '12px Helvetica';
-        ctx.fillText(`${point.x} : ${point.y}`, x - this.halfSize.x, y);
-      }
-    });
-  }
-
-  draw(ctx: CanvasRenderingContext2D, cb: (cell: CellInfos) => void) {
-    this.drawLayers({
-      drawCell: cell => {
-        const { tile, isHighlighted, x, y } = cell;
-        ctx.save();
-        if (isHighlighted) {
-          ctx.filter = 'brightness(200%)';
-          // ctx.fillStyle = 'rgba(255,255,255,0.5)';
-          // ctx.fillRect(x, y, w, h);
-        }
-        this.tileSet.draw(ctx, {
-          tile,
-          coords: { x, y },
-          angle: this.camera.view.angle
-        });
-        ctx.restore();
-        cb(cell);
-      }
-    });
-  }
-
-  updateHighlightedCell(point: Point) {
-    point;
-    // const isoCoords = floorVector(
-    //   divVector(
-    //     subVector(point, addVector(this.camera.view, this.stageOffset)),
-    //     this.camera.view.scale
-    //   )
-    // );
-    // const cellCoords = floorVector(this.toCartesian(isoCoords));
-
-    // this.highlightedCell = this.tileLayers.reduce(
-    //   (acc, layer, i) => {
-    //     // with an isometric view, a cell that is shifted by 1 in all 3 dimensions will appear on top visually
-    //     // ie {x:0 , y: 0, z: 0} will appear behind {x:1, y: 1, z: 1} and so on
-    //     // we wanto highlight the highest possible cell since it's the one hovered by the moue cursor
-    //     const pos = addVector(cellCoords, {
-    //       x: i,
-    //       y: i
-    //     });
-    //     const isOutOfBounds = this.isWithinBounds({ ...point, z: i });
-    //     if (isOutOfBounds) return acc;
-
-    //     const cellIndex = pos.y * layer.width + pos.x;
-    //     const cellAtLayer = this.getLayerData(layer)[cellIndex];
-    //     const hasSpaceAbove = this.tileLayers[i + 1]
-    //       ? this.getLayerData(this.tileLayers[i + 1])[cellIndex] === 0
-    //       : true;
-
-    //     return cellAtLayer && hasSpaceAbove ? { ...pos, z: i } : acc;
-    //   },
-    //   { x: -1, y: -1, z: -1 }
-    // );
+    return { tile, tileMeta, originalPoint, point, x, y, w, h };
   }
 }

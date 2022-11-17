@@ -50,7 +50,6 @@ function draw() {
 
   camera.apply(ctx);
 
-  stage.updateHighlightedCell(mousePosition);
   stage.draw(ctx, cell => {
     const shouldDraw = (pos: Point3D) =>
       vectorEquals3D(
@@ -62,7 +61,6 @@ function draw() {
       player.draw(ctx);
     }
   });
-  // stage.drawDebug(ctx);
   ctx.restore();
 
   return requestAnimationFrame(draw);

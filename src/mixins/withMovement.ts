@@ -1,6 +1,6 @@
 // import { TileSlope } from '@/enums';
 import { ENTITY_MOVEMENT_DURATION } from '@/constants';
-import { Direction, Tileslope, TileSlope } from '@/enums';
+import { Direction, EntityState, Tileslope, TileSlope } from '@/enums';
 import { Entity } from '@/models/Entity';
 import { Constructor, Point3D } from '@/types';
 import { addVector3D, lerpVector, vectorEquals } from '@/utils';
@@ -9,7 +9,7 @@ export const withMovement = <TBase extends Constructor<Entity>>(
   Base: TBase
 ) => {
   return class Movable extends Base {
-    protected lastMovedAt = 0;
+    protected movementStartedAt = 0;
     prevPosition: Point3D = { x: -9999, y: -9999, z: -9999 };
 
     private isWalkable(cell: any) {
@@ -125,21 +125,17 @@ export const withMovement = <TBase extends Constructor<Entity>>(
 
     protected get interpolatedCoords() {
       const cellInfos = this.stage.getCellInfoByPoint3D(this.position);
-      const prevCellInfos = this.stage.getCellInfoByPoint3D(this.prevPosition);
+
       if (!cellInfos) {
         throw new Error('Out of bond cell when interpolating position');
       }
+      if (this.state !== EntityState.WALKING) return cellInfos;
 
+      const prevCellInfos = this.stage.getCellInfoByPoint3D(this.prevPosition);
       if (!prevCellInfos) return cellInfos;
 
       const now = performance.now();
-      const elapsed = now - this.lastMovedAt;
-
-      if (elapsed > ENTITY_MOVEMENT_DURATION) {
-        this.lastMovedAt = 0;
-        this.transitionTo('idle');
-        return cellInfos;
-      }
+      const elapsed = now - this.movementStartedAt;
 
       const coords = lerpVector(
         prevCellInfos,
@@ -158,8 +154,11 @@ export const withMovement = <TBase extends Constructor<Entity>>(
         return;
       }
 
-      this.transitionTo('walking');
-      this.lastMovedAt = performance.now();
+      this.transitionTo(EntityState.WALKING);
+      setTimeout(() => {
+        this.transitionTo(EntityState.IDLE);
+      }, ENTITY_MOVEMENT_DURATION);
+      this.movementStartedAt = performance.now();
       this.prevPosition = this.position;
       this.position = newPosition;
     }
